@@ -2,19 +2,16 @@
 
 import logging
 import requests
-logging.getLogger("requests").setLevel(logging.WARNING)
-
-from json import JSONDecoder
-
-import subprocess
-import datetime
-import os, time, re
-import tempfile
+import json
+import os, time
 import numpy as np
 import cv2
 
 # Image processing functions sorted out for better readability
 import utils_imgRec as utils
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 class ImageRecognitor():
     URL    = 'https://pa.freitagsrunde.org/write'
@@ -23,13 +20,13 @@ class ImageRecognitor():
     FLIP = 0            # rotate?
     last_numbers=[]     # Used to detect duplicates
     last_crop = 0       # Don't crop every image, which doesn't get detected
+    flag_upload_picture = False
 
     def __init__(self, pa_number):
         self.PA = pa_number
         if not self._load_settings():
             del self
-            return None
-        
+
     def work_image(self, image):
         processing_begin = time.time()
         numbers, image = self.image_processing(image)
@@ -37,10 +34,9 @@ class ImageRecognitor():
            self.upload(image, numbers, processing_begin)
 
     def _load_settings(self):
-        import importlib
         try:
-            cfg = importlib.import_module("config_file")
-            settings_dict  = cfg.configuration[self.PA]
+            cfg = json.loads(os.path.join(os.path.dirname(__file__), 'config_file.json'))
+            settings_dict  = cfg[self.PA]
             self.USER = settings_dict['user']
             self.PASS = settings_dict['pass']
             self.NUMBERS = settings_dict['numbers']
@@ -49,13 +45,13 @@ class ImageRecognitor():
                 self.FLIP = int(settings_dict['rotate'])
             if 'crop' in settings_dict.keys():
                 self.CROP = settings_dict['crop']
-                print 'crop', self.CROP
+                print('crop', self.CROP)
         except Exception as e:
             logging.exception('Settings malformed! {0}'.format(e))
             return
 
         # get history from server or generate an empty one
-        # Check certificate while there...
+        ret = None
         fails=0
         while fails<10:
             try:
@@ -74,8 +70,7 @@ class ImageRecognitor():
             self.history = [[0 for j in range(10)] for i in range(self.NUMBERS)]
 
         if ret:
-            # FIXME: use ret.json?
-            entry = JSONDecoder().decode(ret.text)['entries'][0]
+            entry = (ret.json())['entries'][0]
             assert(len(entry['numbers']) == self.NUMBERS)
             entry['numbers'].sort(key=lambda f:int(f['src'].split('/')[0]))
             self.history = [[int(num['num']) for j in range(10)] for num in entry['numbers']]
@@ -121,7 +116,7 @@ class ImageRecognitor():
                 if occurrence > most[1]:
                     most = (num,occurrence)
         
-        #if number is postdecessor of previous and doesn't jump or number has made jumps
+        # if number is postdecessor of previous and doesn't jump or number has made jumps
         number_seems_okay = ((number_ >= most[0] and number_ <= most[0]+4) or 
                  (most[0] >= self.RANGES[i][1]-4 and number_ <= self.RANGES[i][0]+4))
 
@@ -197,13 +192,13 @@ class ImageRecognitor():
             self.last_numbers = current_numbers_int
             self.flag_upload_picture=True
             logging.info("new number")
-            self.test_fail(current_numbers_str, picture)    #out of opening times? (debug-logging purpose)
 
         if current_numbers_str.count('-1') >= self.NUMBERS:
-            return ("", picture)
-        return (current_numbers_str, picture)
+            return "", picture
+        return current_numbers_str, picture
 
-    def threshold_image(self, img):
+    @staticmethod
+    def threshold_image(img):
         img = cv2.normalize(img, alpha=0, beta=255, norm_type=cv2.cv.CV_MINMAX, dtype=cv2.cv.CV_8UC1)
         Z = img.reshape((-1,1))
         Z = np.float32(Z)
@@ -213,7 +208,7 @@ class ImageRecognitor():
 
         center = np.uint8(center)
         res = center[label.flatten()]
-        res2 = res.reshape((img.shape))
+        res2 = res.reshape(img.shape)
         brightness_numbers = np.max(res2)
         _, res2 = cv2.threshold(res2, brightness_numbers-1,255, 0)
         logging.debug('thresholding image to {0}'.format(brightness_numbers))
@@ -243,7 +238,7 @@ class ImageRecognitor():
             if i>500:
                 logging.warning('Strange image, i>500: i={0}, w={1}, width/40:{2}, img:{3}'.format(i, w, width/40, img_.shape))
             i += 1
-            for h_ in xrange(height):
+            for h_ in range(height):
                 #If a horizontal strip is found anywhere in the height
                 if img_[h_,w-width/40:w].all():
                     digit_width = int(width_one_number)
@@ -264,13 +259,13 @@ class ImageRecognitor():
         logging.debug('  Digits: {0}'.format(current_digits))
         return current_digits
 
-    def preprocess_image(self, picture):
+    def preprocess_image(self, picture_):
         """Flip, findTemplate and crop, scale and rotate
         """
         # Flip image if set in the config
 
         if self.FLIP:
-            (h, w) = picture.shape[:2]
+            (h, w) = picture_.shape[:2]
             (cX, cY) = (w // 2, h // 2)
          
             # grab the rotation matrix (applying the negative of the
@@ -289,52 +284,51 @@ class ImageRecognitor():
             M[1, 2] += (nH / 2) - cY
          
             # perform the actual rotation and return the image
-            picture = cv2.warpAffine(picture, M, (nW, nH))
+            picture_ = cv2.warpAffine(picture_, M, (nW, nH))
 
-        if len(picture.shape) > 2:
-            picture = cv2.cvtColor(picture, cv2.cv.CV_BGR2GRAY)
+        if len(picture_.shape) > 2:
+            picture_ = cv2.cvtColor(picture_, cv2.cv.CV_BGR2GRAY)
 
         # Crop image accordingly if history shows many fails
         # Many is defined as 10 numbers in all histories are not recognised
         if not self.CROP or (sum([len([1 for i in h if i == -1]) 
                             for h in self.history]) > (self.NUMBERS*5) and 
                             time.time()-self.last_crop > 10):
-            crop = utils.find_nums_in_whole(picture, self.TEMPLATE_WHOLE)
+            crop = utils.find_nums_in_whole(picture_, self.TEMPLATE_WHOLE)
             if not crop[0]:
                 logging.warning('crop was false? camera moved?: {0}'.format(crop[1]))
                 return None
             self.CROP = crop
             self.last_crop = time.time()
             logging.info('Cropping image to: {0}'.format(str(crop)))
-        picture = picture[self.CROP[1]:self.CROP[3],
+        picture_ = picture_[self.CROP[1]:self.CROP[3],
                           self.CROP[0]:self.CROP[2]]
 
 
-        height, width = picture.shape
+        height, width = picture_.shape
         if not (height or width):
             return None
 
         # Scale down for faster processing
         if width > 200:
             f = 200.0/width
-            picture = cv2.resize(picture,None,fx=f, fy=f)
+            picture_ = cv2.resize(picture_,None,fx=f, fy=f)
 
         # Rotate if necessary (many fails in history)
         if sum([len([i for i in h if i == -1]) 
             for h in self.history]) > self.NUMBERS*5:
-            return utils.straighten_image(picture)
+            return utils.straighten_image(picture_)
 
-        return picture
+        return picture_
         
 
     def upload(self, picture, numbers, processing_begin):
         data={'user':self.USER, 'password':self.PASS, 'ts':int(time.time()),
                 'numbers':numbers, 'begin':int(processing_begin)}
-        self.flag_upload_picture = True #FIXME: until everything is more stable
         files = None
         pic_fd = None
+        filename = os.path.join('/tmp', 'to_upload.png')
         if self.flag_upload_picture:
-            filename = os.path.join('/tmp', 'to_upload.png')
             cv2.imwrite(filename, picture)
             pic_fd = open(filename, 'rb')
             files = {'picture' : pic_fd}
@@ -352,7 +346,7 @@ if __name__ == '__main__':
     from cv2 import imread
     from sys import argv, exit
     if len(argv) < 3:
-        print "missing argument PICTURE or PA! exiting"
+        print("missing argument PICTURE or PA! exiting")
         exit(1)
     picture = argv[1]
     pa = argv[2]

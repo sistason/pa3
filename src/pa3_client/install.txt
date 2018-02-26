@@ -1,50 +1,21 @@
-#NOTE: TODOs are where you don't copy paste, but do stuff
+#!/bin/bash
+#
+# <new rasbian>
+# copy private_key and authorized_keys to /root/.ssh
+# copy main.sh + main_wrapper.sh to /root/
 
-#TODO: do some work here
-#<new rasbian minimal>
-#cp .ssh to /home/pi
-#Start Raspberry Pi
+passwd -d pi
 
-#/bin/bash ---------------------------------------------
-passwd -d pi    #remove password "raspberry" from user pi. Connection only via authorized_keys possible!
 apt-get update
-apt-get install git
+# apt-get install -y vim screen tcpdump xinetd check-mk-agent # Optional
+apt-get install -y fswebcam tmux ferm
+echo "@reboot   root    /root/main_wrapper.sh" >> /etc/crontab
+
 
 # TODO: expand file system here
 raspi-config
-echo "reboot now"
 
-cd /home/pi
-#TODO: git config --global user.name "$NAME"
-#TODO: git config --global user.email "$MAIL"
-git clone git+ssh://pa/home/pruefungsamt/paPi
-mv paPi/* paPi/.* .
-rm -rf paPi
+# sed -i "s/disable[$'\t' ]*=[$'\t' ]*yes/disable = no/" /etc/xinetd.d/check_mk
+# service xinetd restart
 
-######### Install misc ###########
-cp -R global_configs/_root /
-
-apt-get install ferm vim screen tcpdump fswebcam imagemagick xinetd check-mk-agent
-
-rm /etc/rc.local; ln -s /home/pi/global_configs/_etc/rc.local /etc/rc.local
-rm /etc/fstab; ln -s /home/pi/global_configs/_etc/fstab /etc/fstab
-rm /etc/ferm/ferm.conf; ln -s  /home/pi/global_configs/_etc/ferm.conf /etc/ferm/ferm.conf
-
-ferm -i /etc/ferm/ferm.conf
-# Check if /etc/xinet.d/check_mk has disable=no
-# If not, service xinetd restart
-
-mkdir -p /home/pi/camera/pictures
-mkdir -p /home/pi/camera/fails  #not recognised pics
-mount /home/pi/camera/pictures
-
-#TODO: edit here. IMPORTANT, this sets the source of the pa!
-echo "hostname paProjPiH??"
-
-#TODO: set locale here
-dpkg-reconfigure locales
-
-########## Install Dependencies #########
- 
-apt-get install python-numpy python-opencv libssl-dev python-requests
-apt-get remove python-openssl #Because of bug in the parsing of the Cert
+reboot
