@@ -35,17 +35,18 @@ class ImageRecognitor():
 
     def _load_settings(self):
         try:
+            with open(os.path.join(os.path.dirname(__file__), '{:02}_pw.txt'.format(self.PA))) as f:
+                self.PASS = f.read().strip()
+
             cfg = json.loads(os.path.join(os.path.dirname(__file__), 'config_file.json'))
-            settings_dict  = cfg[self.PA]
+            settings_dict = cfg[self.PA]
             self.USER = settings_dict['user']
-            self.PASS = settings_dict['pass']
             self.NUMBERS = settings_dict['numbers']
             self.RANGES = settings_dict['ranges']
             if 'rotate' in settings_dict.keys():
                 self.FLIP = int(settings_dict['rotate'])
             if 'crop' in settings_dict.keys():
                 self.CROP = settings_dict['crop']
-                print('crop', self.CROP)
         except Exception as e:
             logging.exception('Settings malformed! {0}'.format(e))
             return
@@ -78,14 +79,14 @@ class ImageRecognitor():
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         try:
-            self.TEMPLATE_WHOLE = cv2.imread(os.path.join(current_dir, 'templates', 'template_whole_{:02}.png'.format(self.PA)), 0)
+            self.TEMPLATE_WHOLE = cv2.imread(os.path.join(current_dir, 'templates', 'template_whole_{}.png'.format(self.PA)), 0)
         except Exception as e:
             logging.exception('Could not load whole template! Error: {0}'.format(e))
             return
 
         # generate self.ONE_RATIO from template
         try:
-            im = cv2.imread(os.path.join(current_dir, 'templates', 'template_digit_{:02}.png'.format(self.PA)), 0)
+            im = cv2.imread(os.path.join(current_dir, 'templates', 'template_digit_{}.png'.format(self.PA)), 0)
             temp_height, temp_width = im.shape
             self.ONE_RATIO = 1.0*temp_width/temp_height
         except Exception as e:
@@ -254,7 +255,7 @@ class ImageRecognitor():
             else:
                 w -= 1
         # On PA H23, a 1 is glued in front to get numbers above 1000
-        if self.PA == 23 and number==2:
+        if self.PA == "23" and number==2:
             current_digits.insert(0,(1,100))
         logging.debug('  Digits: {0}'.format(current_digits))
         return current_digits

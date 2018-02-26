@@ -6,5 +6,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y htop vim
 RUN mkdir /root/current_images
 
 COPY src/pa3_recognizer /root/
+ADD data/secret/pa_*_pw.txt /root/
 
 CMD ["python", "/root/paProj.py"]

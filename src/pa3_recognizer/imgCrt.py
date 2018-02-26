@@ -12,7 +12,7 @@ class ImageCreator():
     
     def __init__(self, pa_number, image_directory):
         self.IMAGE_DIR = image_directory
-        self.PA = "{:02}".format(pa_number)
+        self.PA = pa_number
 
     def get_image(self):
         try:
