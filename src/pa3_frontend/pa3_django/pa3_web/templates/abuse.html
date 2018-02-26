@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% block title %}{% trans "Examination Office Project" %} - {% trans "Abuse" %}{% endblock %}
+
+{% block content %}
+{% trans "In questions of abuse, there are multiple possibilities to take" %}:<br />
+	<ul>
+	<li>{% trans "In case of a problem with the subscription-service" %}<br />
+		<ol>
+		<li>{% trans "Blacklist your adress" %}:<br />
+			<form action=/blacklist method=POST>
+				{% if blacklist_form.success %}<div class=success>
+					{% for success in blacklist_form.success %}
+						{{ success }}<br />
+					{% endfor %}</div>
+				{% endif %}
+
+				{{ blacklist_form.non_field_errors }}
+				<label for=id_address>{% trans "Address" %}</label>: 
+					{{ blacklist_form.address }}<span class=field_errors>{{ blacklist_form.address.errors.as_text}}</span><br />
+				<label for=id_protocol>{% trans "Protocol" %}</label>: 
+					{{ blacklist_form.protocol }}<span class=field_errors>{{ blacklist_form.protocol.errors.as_text}}</span>
+				<input type=submit value={% trans "Block" %} />
+			</form><br />
+		</li>
+		</ol>
+	</li>
+	<li>{% trans "In any urgent case" %}:<br />
+		<ol>
+		<li>{% trans "Write an email to" %}: (kais)AT(freitagsrunde).(org)</li>
+		</ol>
+	</li>
+
+{% endblock %}

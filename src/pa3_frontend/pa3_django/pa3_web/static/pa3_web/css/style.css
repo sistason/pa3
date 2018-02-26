@@ -1,0 +1,226 @@
+@font-face {
+  font-family: 'PT Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('PT Sans'), local('PTSans-Regular'), url(http://wiki.freitagsrunde.org/skins/frunde/ptsans.woff) format('woff');
+}
+html {
+	background-color:#fffcfa;
+}
+body {
+	font-family:'PT Sans', sans-serif;
+	color:#111;
+	padding:1em 1em;
+}
+h1 {
+	font-size:1.3em;
+}
+h2 {
+	font-size:1.15em;
+}
+a img { border:0; }
+
+.framehead {text-align:center;}
+.fr_frame {
+	float:left;
+	width: 49%;
+}
+.pa_frame {
+	width: 49%;
+	float:right;
+	border-left:1px solid #ccc;
+	padding-left:1%;
+}
+.leftside {
+	float:left;
+	width:50%;
+}
+
+.applets {
+	float:right;
+}
+
+.number-box {
+	display:inline-block;
+	text-align:center;
+
+	margin:0 1.5em 1.5em 0;
+	
+	border:1px solid #666;
+	box-shadow:0 1px 1px rgba(0,0,0,0.3);
+
+	padding:.5em .9em;
+	width:8em;
+	position:relative;
+	vertical-align:top;
+
+	background: #f6fcff; /* Old browsers */ 
+	background: -moz-linear-gradient(top,  #f6fcff 0%, #d9e9f3 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f6fcff), color-stop(100%,#d9e9f3)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #f6fcff 0%,#d9e9f3 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #f6fcff 0%,#d9e9f3 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #f6fcff 0%,#d9e9f3 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #f6fcff 0%,#d9e9f3 100%); /* W3C */
+
+}
+.number-box span {
+	display:block;
+	text-shadow:0 1px 0 #fff;
+}
+.number-box .location {
+	color:#777;
+	margin-bottom: 0.5em;
+}
+.number-box .room {
+	font-size:1em;
+	font-weight:bold;
+	padding-bottom:.3em;
+}
+.number-box .updated {
+	font-size:0.9em;
+	padding-top:.4em;
+}
+.number-box .number {
+	font-size:3em;
+	font-weight:bold;
+	padding:.3em 0;
+	border:1px solid #fff;
+	border-width:1px 0;
+}
+
+
+/* Edge-in-border creation */
+.number-box:after,
+.number-box:before,
+.number-box .room:after,
+.number-box .room:before {
+	content:"";
+	position:absolute;
+	top:5em;
+
+	width: 0px;
+	height: 0px;
+	border-style: solid;
+}
+.number-box:after {
+	left:-2px;
+	margin-top:-4px;
+	
+	border-width: 3.5px 0 3.5px 6px;
+	border-color: transparent transparent transparent #ffffff;
+}
+.number-box:before {
+	left:-1px;
+	margin-top:-5px;
+
+	border-width: 4.5px 0 4.5px 7px;
+	border-color: transparent transparent transparent #666;
+}
+.number-box .room:after {
+	right:-2px;
+	margin-top:-4px;
+
+	border-width: 3.5px 6px 3.5px 0;
+	border-color: transparent #ffffff transparent transparent;
+
+}
+.number-box .room:before {
+	right:-1px;
+	margin-top:-5px;
+
+	border-width: 4.5px 7px 4.5px 0;
+	border-color: transparent #666 transparent transparent;
+}
+/* End Edge in border creation */
+
+
+
+
+
+.opening, .subscribe-box{
+	background:#f6fcff;
+	display:inline-block;
+	border:1px solid #aaa;
+	padding:1em 1em .5em;
+	color:#555;
+	margin:0 0 1em;
+	width:15em;
+}
+.opening h2, .subscribe-box h2 {
+	margin:0;
+	color:#222;
+}
+.opening dl {
+	margin:.5em 0 0;
+}
+.opening dt, .opening dd {
+	margin-bottom:.5em;
+}
+.opening dt {
+	float:left;
+	clear:left;
+}
+.opening dd {
+	margin-left:7em;
+}
+.opening .current {
+	font-weight:bold;
+	color:#111;
+}
+.opening .on {
+	color:green;
+}
+.opening .header {
+	color:green;
+	text-align:right;
+	margin-top: -0.2em;
+	margin-bottom: -0.2em;
+}
+
+.subscribe-box .field_errors, .subscribe-box .nav,
+.subscribe-box .success {text-align:center;}
+
+.subscribe-box .field_errors{
+	color:red;
+	font-size:0.7em;
+}
+.subscribe-box .success{color:green;}
+.subscribe-box .toggle_help{font-size:0.8em;}
+
+.subscribe-box #content-sms {display:none;}
+.subscribe-box #content-mail {display:block;}
+.subscribe-box #content-browser {display:none;}
+.subscribe-box #content-xmpp {display:none;}
+
+@media (max-width: 720px){
+	.number-box {
+		box-sizing: border-box;
+		margin-right:2%;
+		padding:.5em .6em;
+	}
+	.number-box .number {
+		font-size:2.4em;
+		padding:.2em 0;
+	}
+	.opening {
+		float:none;
+		display:block;
+	}
+	body {
+		padding:0.25em;
+	}
+	.logo img {
+		width:80px;
+	}
+	.pa_frame, .fr_frame, 
+	.applets, .leftside{
+		float:none;
+	}
+	.frame {
+		width:100%;
+	}
+	.leftside {
+		float:left;
+		width:100%;
+	}
+}

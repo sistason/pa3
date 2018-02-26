@@ -14,7 +14,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 class ImageRecognitor():
-    URL    = 'https://pa.freitagsrunde.org/write'
+    URL    = 'https://pa3_frontend/write'
     ACTIVE = True       # Do upload?
     CROP = None         # Manual image crop? None=gets read from settings
     FLIP = 0            # rotate?

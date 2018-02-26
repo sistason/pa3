@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load pa2_timesinceseconds %}
+
+{% block title %}{% trans "Examination Office Project" %}{% endblock %}
+
+{% block content %}
+
+{# {% include "information.html" %} #}
+
+<div class=leftside>
+	<h1>{% trans "The latest numbers of the examination offices" %}</h1>
+	<p class="current-time">{% now "D, j. F Y H:i:s" %}</p>
+
+	{% if msg %}
+		<table width=40%>
+			<tr>
+				<td><img height=150px src={% static "pa3_web/img/down.png" %} /></td>
+				<td><h2>{{ msg|safe }}</h2></td>
+			</tr>
+		</table>
+	{% endif %}
+
+	{% for e in errors %} 
+		<p>{{ e }}</p>
+	{% endfor %}
+
+	{% for pa in data %}
+		{% for number in pa.numbers %}
+			<div class="number-box">
+				<span class="location">{% trans "Table at" %} <a name=pa{{pa.src}} href="/{{pa.src}}">H {{pa.src}}</a>
+				{% if pa.prev %}
+					<br />
+					<span style=color:red>
+						{% blocktrans with pa.prev|timesinceseconds as prev %}Updated {{prev}} ago{% endblocktrans %}
+					</span>
+				{% endif %}
+				</span>
+				<span class="room">{{number.pa}}</span>
+				<span class="number">{{number.nr}}</span>
+				{% if number.prev %}
+					<span class="updated">{% blocktrans with number.prev|timesincesecondsonly as prev %}called {{prev}} before{% endblocktrans %}</span>
+					<span class="updated">{% blocktrans with number.avg|floatformat as avg %}<u>Average:</u> {{avg}} seconds{% endblocktrans %}</span> 
+				{% else %}
+					<span class="updated">-<br />-</span>
+					{% if dbg %}
+						<span class="updated">{% blocktrans with number.avg|floatformat as avg %}<u>Average:</u> {{avg}} seconds{% endblocktrans %}</span> 
+					{% endif%}
+				{% endif %}
+				{% if dbg %}
+					<hr ><img class="picture" src="/static/img/picture_{{pa.src}}.png" width="100" />
+				{% endif %}
+			</div>
+		{% endfor %}
+	{% endfor %}
+</div>
+
+<div class=applets>
+	{% if FR_frame or PA_frame %}
+		{% include "frameOpenings.html" %}<br />
+		{% include "frameSubscribe.html" %}<br />
+	{% endif %}
+	<div class="logo">
+		<a href="http://wiki.freitagsrunde.org">
+			<img src="http://wiki.freitagsrunde.org/skins/frunde/logo.png">
+		</a>
+	</div>
+</div>
+
+
+<div style=clear:both></div>
+
+
+
+{% if FR_frame or PA_frame %}
+	{% include "currentstatus.html" %}
+	<hr />
+
+	<div class="fr_frame">
+		<p class="framehead"><u>{% trans "News from the Freitagsrunde" %}</u><br />{{FR_frame_date|date:"D, j. F Y"}}</p>
+		{{FR_frame.news|safe}}
+	</div>
+	<div class="pa_frame">
+		<p class="framehead"><u>{% trans "News from the examination office" %}</u><br />{{PA_frame_date|date:"D, j. F Y"}}</p>
+		{{PA_frame.news|safe}}
+	</div></div></div></div></div></div><!-- Die Pa-News sind nicht immer valide formatiert... -->
+	<div style="clear:both;"></div>
+
+	{% include "disclaimer.html" %}
+{% else %}
+	<a href="/">Alle Tafeln anzeigen</a>
+{% endif %}
+
+{% endblock %}

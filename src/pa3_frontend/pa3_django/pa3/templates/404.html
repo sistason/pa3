@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+{% load i18n %}
+<html>
+{% load static %}
+ <head>
+  <title>Error 404 - {% trans "Examination Office Project" %}</title>
+  <link rel="stylesheet" href="{% static "pa3/css/style.css" %}" type="text/css">
+ </head>
+ <body>
+ <table>
+ <tr>
+<td width=70%>
+<h1>Error 404 - File not found</h1>
+<h2>{% trans "The requested resource does not exist (any more)" %}</h2>
+
+<p>{% trans "Oops - something went wrong!" %}</p>
+
+<p>{% blocktrans %}Maybe you try going <a href=/>back to the front page</a>?{% endblocktrans %}</p>
+</td>
+<td width=30%><img height=300px src={% static "pa3/img/404pony.png" %} /></td>
+</tr>
+</table>
+</body>
+</html>

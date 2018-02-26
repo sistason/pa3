@@ -38,12 +38,12 @@ docker run --rm -dit --name ${NAME}_mysql --net $NET -h ${NAME}_mysql \
     --mount type="bind",source="${DATA_DIR}/mysql",destination="/var/lib/mysql" \
     mysql
 
-cp ${DATA_DIR}/secrets/{mysql,djangokey}_pw.txt $DIR/src/pa3_frontend/pa3/  #TODO: remove on production
+cp ${DATA_DIR}/secrets/* $DIR/src/pa3_frontend/pa3_django/secrets/  #TODO: remove on production
 mkdir -p "${DATA_DIR}/frontend_bindfs/" 2>/dev/null    #TODO: remove on production
 umount "${DATA_DIR}/frontend_bindfs/" 2>/dev/null
-bindfs "$DIR/src/pa3_frontend/pa3" "${DATA_DIR}/frontend_bindfs" -o "force-user=0,force-group=0"  #TODO: remove on production
+bindfs "$DIR/src/pa3_frontend/pa3_django" "${DATA_DIR}/frontend_bindfs" -o "force-user=0,force-group=0"  #TODO: remove on production
 docker run --rm -dit --name $FRONTEND -h $BACKEND -p 9080:80 -p 9433:443 --net $NET \
-    --mount type="bind",source="${DATA_DIR}/frontend_bindfs",destination="/root/pa3" \
+    --mount type="bind",source="${DATA_DIR}/frontend_bindfs",destination="/root/pa3_django" \
     ${FRONTEND}
 
 if [ ! -e "${DATA_DIR}/current_images/" ]; then mkdir -p "${DATA_DIR}/current_images/"; fi

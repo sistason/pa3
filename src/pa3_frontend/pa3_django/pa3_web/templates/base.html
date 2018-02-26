@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    {% load static %}
+	<head>
+	<title>{% block title %}{% endblock %}</title>
+	<link rel="stylesheet" type="text/css" href="{% static "pa3_web/css/style.css" %}">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	{% block head %}
+	{% endblock %}
+	</head>
+	<body>
+
+		{% block content %}
+		{% endblock %}
+
+	</body>
+</html>
+

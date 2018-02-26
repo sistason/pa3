@@ -1,8 +1,33 @@
 FROM python:3.6
 ENV PYTHONUNBUFFERED 1
-RUN mkdir /root/pa3
-# ADD src/pa3_frontend/pa3 /root/pa3 # when finished. Now, mount rw volume for better setup first
-# ADD src/secrets /root/pa3/    #TODO: check if correct folder-copy or single files
 
-ADD src/pa3_frontend/requirements.txt /root/
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales gettext
+RUN sed -i -e 's/# de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=de_DE.UTF-8
+ENV LANG de_DE.UTF-8 
+
+RUN echo 
+
+# Remove afterwards
+RUN mkdir /root/pa3_django # remove afterwards
+ADD src/pa3_frontend/commands.sh /root/
+RUN chmod +x /root/commands.sh
+ADD src/pa3_frontend/requirements.txt /root
+
+# ADD src/pa3_frontend/* /root/ # when finished. Now, mount rw volume for better setup first
+# ADD data/secrets /root/pa3_django/    #TODO: check if correct folder-copy or single files
+
 RUN pip install -r /root/requirements.txt
+
+EXPOSE 8000
+
+# Add any custom, static environment variables needed by Django or your settings file here:
+#ENV DJANGO_SETTINGS_MODULE=my_project.settings.deploy
+
+RUN useradd uwsgi
+ENV UWSGI_WSGI_FILE=/root/pa3_django/pa3/wsgi.py UWSGI_HTTP=:8000 UWSGI_MASTER=1 UWSGI_WORKERS=2 UWSGI_THREADS=8 UWSGI_UID=1000 UWSGI_GID=2000 UWSGI_LAZY_APPS=1 UWSGI_WSGI_ENV_BEHAVIOR=holy
+
+# Start uWSGI
+#CMD ["/root/commands.sh"]
+CMD ["/bin/bash"]

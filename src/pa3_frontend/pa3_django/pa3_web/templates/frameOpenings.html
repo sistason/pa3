@@ -1,0 +1,14 @@
+{% load pa2_openings %}
+{% load i18n %}
+
+<div class="opening">
+<h2>{% trans "Opening Hours" %}</h2>
+
+{% autoescape off %}
+<dl>
+	{% for op in openings %}
+		{% pa_openings op %}
+	{% endfor %}
+</dl>
+{% endautoescape %}
+</div>

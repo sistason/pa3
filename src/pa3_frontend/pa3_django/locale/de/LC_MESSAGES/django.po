@@ -1,0 +1,239 @@
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-02-26 15:13+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+#: pa2/templates/404.html:5 pa2/web/templates/abuse.html:4
+#: pa2/web/templates/index.html:6 pa3/templates/404.html:6
+#: pa3_web/templates/abuse.html:4 pa3_web/templates/index.html:7
+msgid "Examination Office Project"
+msgstr "Prüfungsamtprojekt"
+
+#: pa2/templates/404.html:13 pa3/templates/404.html:14
+msgid "The requested resource does not exist (any more)"
+msgstr "Die angeforderte Resource existiert nicht (mehr)"
+
+#: pa2/templates/404.html:15 pa3/templates/404.html:16
+msgid "Oops - something went wrong!"
+msgstr "Huch - hier ist wohl etwas schiefgelaufen!"
+
+#: pa2/templates/404.html:17 pa3/templates/404.html:18
+msgid "Maybe you try going <a href=/>back to the front page</a>?"
+msgstr ""
+"Vielleicht klappt es ja, wenn Du nochmal <a href=/>zurück zur Startseite</a> "
+"gehst..."
+
+#: pa2/templates/frameOpenings.html:5 pa3_web/templates/frameOpenings.html:5
+msgid "Opening Hours"
+msgstr "Öffnungszeiten"
+
+#: pa2/templates/frameSubscribe.html:29
+#: pa3_web/templates/frameSubscribe.html:30
+msgid "Subscription"
+msgstr "Benachrichtigung"
+
+#: pa2/templates/frameSubscribe.html:49
+#: pa3_web/templates/frameSubscribe.html:50
+msgid "Recipient"
+msgstr "Empfänger"
+
+#: pa2/templates/frameSubscribe.html:52
+#: pa3_web/templates/frameSubscribe.html:53
+msgid "Number"
+msgstr "Nummer"
+
+#: pa2/templates/frameSubscribe.html:54
+#: pa3_web/templates/frameSubscribe.html:55
+msgid "Buffer"
+msgstr "Puffer"
+
+#: pa2/templates/frameSubscribe.html:57
+#: pa3_web/templates/frameSubscribe.html:58
+msgid "Bureau"
+msgstr "Amt"
+
+#: pa2/templates/frameSubscribe.html:61
+#: pa3_web/templates/frameSubscribe.html:62
+msgid "Subscribe"
+msgstr "Abonnieren"
+
+#: pa2/web/forms.py:39 pa3_web/forms.py:37
+msgid "Your mobile number"
+msgstr "Deine Handynummer"
+
+#: pa2/web/forms.py:42 pa3_web/forms.py:40
+msgid "Your mail address"
+msgstr "Deine Mailadresse"
+
+#: pa2/web/forms.py:45 pa3_web/forms.py:43
+msgid "Your XMPP-account"
+msgstr "Dein XMPP-Account"
+
+#: pa2/web/forms.py:54 pa3_web/forms.py:52
+msgid "Your drawn number"
+msgstr "Deine gezogene Nummer"
+
+#: pa2/web/number_handling.py:41 pa3/number_handling.py:38
+msgid "Success!"
+msgstr "Erfolg!"
+
+#: pa2/web/number_handling.py:47 pa3/number_handling.py:43
+msgid "Fail!"
+msgstr "Fehlschlag!"
+
+#: pa2/web/templates/abuse.html:4 pa3_web/templates/abuse.html:4
+msgid "Abuse"
+msgstr "Missbrauch"
+
+#: pa2/web/templates/abuse.html:7 pa3_web/templates/abuse.html:7
+msgid "In questions of abuse, there are multiple possibilities to take"
+msgstr "Bei Missbrauchfragen gibt es mehrere Moeglichkeiten des Vorgehens"
+
+#: pa2/web/templates/abuse.html:9 pa3_web/templates/abuse.html:9
+msgid "In case of a problem with the subscription-service"
+msgstr "Bei einem Problem mit dem Benachrichtigungs-service"
+
+#: pa2/web/templates/abuse.html:11 pa3_web/templates/abuse.html:11
+msgid "Blacklist your adress"
+msgstr "Blocken der Addresse"
+
+#: pa2/web/templates/abuse.html:20 pa3_web/templates/abuse.html:20
+msgid "Address"
+msgstr "Adresse"
+
+#: pa2/web/templates/abuse.html:22 pa3_web/templates/abuse.html:22
+msgid "Protocol"
+msgstr "Protokoll"
+
+#: pa2/web/templates/abuse.html:24 pa3_web/templates/abuse.html:24
+msgid "Block"
+msgstr "Blockieren"
+
+#: pa2/web/templates/abuse.html:29 pa3_web/templates/abuse.html:29
+msgid "In any urgent case"
+msgstr "In allen dringenden Faellen"
+
+#: pa2/web/templates/abuse.html:31 pa3_web/templates/abuse.html:31
+msgid "Write an email to"
+msgstr "Schreiben Sie eine EMail an"
+
+#: pa2/web/templates/index.html:13 pa3_web/templates/index.html:14
+msgid "The latest numbers of the examination offices"
+msgstr "Die aktuellsten Nummern aus den Prüfungsämtern"
+
+#: pa2/web/templates/index.html:32 pa3_web/templates/index.html:33
+msgid "Table at"
+msgstr "Tafel am"
+
+#: pa2/web/templates/index.html:36 pa3_web/templates/index.html:37
+#, fuzzy, python-format
+msgid "Updated %(prev)s ago"
+msgstr "Aktualisiert vor %(prev)s"
+
+#: pa2/web/templates/index.html:43 pa3_web/templates/index.html:44
+#, fuzzy, python-format
+msgid "called %(prev)s before"
+msgstr "aufgerufen vor %(prev)s"
+
+#: pa2/web/templates/index.html:44 pa2/web/templates/index.html:48
+#: pa3_web/templates/index.html:45 pa3_web/templates/index.html:49
+#, fuzzy, python-format
+#| msgid "Average: %(avg)s"
+msgid "<u>Average:</u> %(avg)s seconds"
+msgstr "Durschnitt: %(avg)s"
+
+#: pa2/web/templates/index.html:81 pa3_web/templates/index.html:82
+msgid "News from the Freitagsrunde"
+msgstr "News aus der Freitagsrunde"
+
+#: pa2/web/templates/index.html:85 pa3_web/templates/index.html:86
+msgid "News from the examination office"
+msgstr "News aus dem Prüfungsamt"
+
+#: pa2/web/templatetags/pa2_openings.py:23
+#: pa3_web/templatetags/pa2_openings.py:23
+msgid "closed"
+msgstr "Geschlossen"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:26
+#: pa3_web/templatetags/pa2_timesinceseconds.py:27
+msgid "year"
+msgid_plural "years"
+msgstr[0] "Jahr"
+msgstr[1] "Jahre"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:27
+#: pa3_web/templatetags/pa2_timesinceseconds.py:28
+msgid "month"
+msgid_plural "months"
+msgstr[0] "Monat"
+msgstr[1] "Monate"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:28
+#: pa3_web/templatetags/pa2_timesinceseconds.py:29
+msgid "week"
+msgid_plural "weeks"
+msgstr[0] "Woche"
+msgstr[1] "Wochen"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:29
+#: pa3_web/templatetags/pa2_timesinceseconds.py:30
+msgid "day"
+msgid_plural "days"
+msgstr[0] "Tag"
+msgstr[1] "Tagen"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:30
+#: pa3_web/templatetags/pa2_timesinceseconds.py:31
+msgid "hour"
+msgid_plural "hours"
+msgstr[0] "Stunde"
+msgstr[1] "Stunden"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:31
+#: pa3_web/templatetags/pa2_timesinceseconds.py:32
+msgid "minute"
+msgid_plural "minutes"
+msgstr[0] "Minute"
+msgstr[1] "Minuten"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:32
+#: pa3_web/templatetags/pa2_timesinceseconds.py:33
+msgid "second"
+msgid_plural "seconds"
+msgstr[0] "Sekunde"
+msgstr[1] "Sekunden"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:58
+#: pa3_web/templatetags/pa2_timesinceseconds.py:59
+#, fuzzy
+msgid "seconds"
+msgstr "Sekunde"
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:63
+#: pa3_web/templatetags/pa2_timesinceseconds.py:64
+#, python-format
+msgid "%(number)d %(type)s"
+msgstr ""
+
+#: pa2/web/templatetags/pa2_timesinceseconds.py:69
+#: pa3_web/templatetags/pa2_timesinceseconds.py:70
+#, python-format
+msgid ", %(number)d %(type)s"
+msgstr ""
+
+#~ msgid "Monday"
+#~ msgstr "Montag"
+
+#~ msgid "Tuesday"
+#~ msgstr "Dienstag"
+
+#~ msgid "Wednesday"
+#~ msgstr "Mittwoch"
+
+#~ msgid "Thursday"
+#~ msgstr "Donnerstag"
+
+#~ msgid "Friday"
+#~ msgstr "Freitag"
