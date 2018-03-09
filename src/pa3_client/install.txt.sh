@@ -8,7 +8,7 @@ passwd -d pi
 
 apt-get update
 # apt-get install -y vim screen tcpdump xinetd check-mk-agent # Optional
-apt-get install -y fswebcam tmux ferm
+apt-get install -y fswebcam tmux ferm imagemagick
 echo "@reboot   root    /root/main_wrapper.sh" >> /etc/crontab
 
 

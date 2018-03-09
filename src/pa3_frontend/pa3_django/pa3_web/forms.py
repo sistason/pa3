@@ -1,6 +1,7 @@
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
 #from models import Location
+from pa3.settings import PA_INDEX
 from pa3.models import NewestNumberBatch, ClientHandler
 from django.utils.translation import ugettext
 
@@ -19,12 +20,9 @@ class FormWithNonFieldErrorExpansion:
 
 
 class SubscribeForm(forms.Form, FormWithNonFieldErrorExpansion):
-    choice=[]
-    [choice.extend([num.src for num in new.newest.numbers.all()]) \
-                    for new in NewestNumberBatch.objects.all()]
-    choices_src = zip(choice, choice)
-
+    choices_src = zip(PA_INDEX.keys(), PA_INDEX.keys())
     src = forms.ChoiceField(choices=choices_src)
+
     buf = forms.CharField(initial=5, max_length=5, 
                             widget=forms.TextInput(attrs={'size':'5'}))
     number = None

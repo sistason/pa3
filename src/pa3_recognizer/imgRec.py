@@ -3,9 +3,11 @@
 import logging
 import requests
 import json
-import os, time
+import os
+import time
 import numpy as np
 import cv2
+import sys
 
 # Image processing functions sorted out for better readability
 import utils_imgRec as utils
@@ -13,17 +15,18 @@ import utils_imgRec as utils
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-class ImageRecognitor():
-    URL    = 'https://pa3_frontend/write'
+class ImageRecognitor:
     ACTIVE = True       # Do upload?
     CROP = None         # Manual image crop? None=gets read from settings
     FLIP = 0            # rotate?
-    last_numbers=[]     # Used to detect duplicates
+    last_numbers = []     # Used to detect duplicates
     last_crop = 0       # Don't crop every image, which doesn't get detected
     flag_upload_picture = False
 
-    def __init__(self, pa_number):
+    def __init__(self, pa_number, client_password='', server_url=''):
         self.PA = pa_number
+        self.URL = server_url
+        self.PASS = client_password
         if not self._load_settings():
             del self
 
@@ -31,14 +34,15 @@ class ImageRecognitor():
         processing_begin = time.time()
         numbers, image = self.image_processing(image)
         if self.ACTIVE and numbers:
-           self.upload(image, numbers, processing_begin)
+            self.upload(image, numbers, processing_begin)
 
     def _load_settings(self):
         try:
-            with open(os.path.join(os.path.dirname(__file__), '{:02}_pw.txt'.format(self.PA))) as f:
-                self.PASS = f.read().strip()
-
-            cfg = json.loads(os.path.join(os.path.dirname(__file__), 'config_file.json'))
+            if not self.PASS:
+                with open(os.path.join(os.path.dirname(__file__), 'pa_{}_pw.txt'.format(self.PA))) as f:
+                    self.PASS = f.read().strip()
+            with open(os.path.join(os.path.dirname(__file__), 'config_file.json')) as f:
+                cfg = json.load(f)
             settings_dict = cfg[self.PA]
             self.USER = settings_dict['user']
             self.NUMBERS = settings_dict['numbers']
@@ -54,28 +58,33 @@ class ImageRecognitor():
         # get history from server or generate an empty one
         ret = None
         fails=0
-        while fails<10:
+        while fails<3:
             try:
-                ret = requests.get('https://pa.freitagsrunde.org/api/{}'.format(self.USER.split('_')[-1]), verify=False)
+                ret = requests.get('https://{}/api/{}'.format(self.URL, self.USER.split('_')[-1]), verify=False)
                 break
             except requests.exceptions.SSLError:
-                logging.exception( "Certificate Failed!!! Man in the Middle?!? Outdated?!? Mutax?!?")
+                logging.exception("Certificate Failed")
                 return
             except Exception as e:
                 # Recursive wait until internet has returned
                 logging.exception(e)
-                time.sleep(5)
+                time.sleep(3)
             fails+=1
+
+        if ret:
+            entries = (ret.json())['entries']
+            entry = entries[0] if entries else {}
+            numbers = entry.get('numbers', [])
+            if len(numbers) != self.NUMBERS:
+                self.history = [list(range(10))]
+            else:
+                numbers.sort(key=lambda f:int(f['src'].split('/')[0]))
+                self.history = [[int(num['num']) for j in range(10)] for num in numbers]
+            logging.info('Initial Numbers: {0}'.format(str([num['num'] for num in numbers])))
         else:
             logging.exception('Loading initial numbers failed, initiallizing with zeros')
             self.history = [[0 for j in range(10)] for i in range(self.NUMBERS)]
 
-        if ret:
-            entry = (ret.json())['entries'][0]
-            assert(len(entry['numbers']) == self.NUMBERS)
-            entry['numbers'].sort(key=lambda f:int(f['src'].split('/')[0]))
-            self.history = [[int(num['num']) for j in range(10)] for num in entry['numbers']]
-            logging.info('Initial Numbers: {0}'.format(str([num['num'] for num in entry['numbers']])))
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         try:
@@ -109,7 +118,7 @@ class ImageRecognitor():
             self.history[i].append(-1)
             return False
 
-        #which number occurs the most in the history?
+        # which number occurs the most in the history?
         most=(-1,-1)
         for num in self.history[i]:
             if num > -1:
@@ -161,8 +170,6 @@ class ImageRecognitor():
             # Image is cropped, so height/NUMBERS gives the single numbers
             img_ = img.copy()[number*(height/self.NUMBERS):(1+number)*(height/self.NUMBERS),:]
 
-            #temp_numbers = []
-
             img_ = self.threshold_image(img_)
 
             all_current_digits = self.process_image(img_, number)
@@ -177,7 +184,7 @@ class ImageRecognitor():
                 logging.info('\tValid!')
                 current_numbers.append((valid, avg_confidence))
             else:
-                logging.info('Nope: {0}'.format(str(all_current_digits)))
+                logging.info('Nope: {}'.format(str(all_current_digits)))
                 current_numbers.append((-1, avg_confidence))
             
         numbers = ' | '.join(["{0}:{1:.0%}".format(i[0],i[1]/100.0) for i in current_numbers])
@@ -235,8 +242,8 @@ class ImageRecognitor():
         w = width
         current_digits = []
         i=0
-        while w >0 and w >= width/40:         #iterate reversed through the width
-            if i>500:
+        while w > 0 and w >= width/40:         #iterate reversed through the width
+            if i > 500:
                 logging.warning('Strange image, i>500: i={0}, w={1}, width/40:{2}, img:{3}'.format(i, w, width/40, img_.shape))
             i += 1
             for h_ in range(height):
@@ -255,8 +262,8 @@ class ImageRecognitor():
             else:
                 w -= 1
         # On PA H23, a 1 is glued in front to get numbers above 1000
-        if self.PA == "23" and number==2:
-            current_digits.insert(0,(1,100))
+        if self.PA == "23" and number == 2:
+            current_digits.insert(0, (1, 100))
         logging.debug('  Digits: {0}'.format(current_digits))
         return current_digits
 
@@ -305,7 +312,6 @@ class ImageRecognitor():
         picture_ = picture_[self.CROP[1]:self.CROP[3],
                           self.CROP[0]:self.CROP[2]]
 
-
         height, width = picture_.shape
         if not (height or width):
             return None
@@ -316,32 +322,25 @@ class ImageRecognitor():
             picture_ = cv2.resize(picture_,None,fx=f, fy=f)
 
         # Rotate if necessary (many fails in history)
-        if sum([len([i for i in h if i == -1]) 
-            for h in self.history]) > self.NUMBERS*5:
+        if sum([len([i for i in h if i == -1]) for h in self.history]) > self.NUMBERS*5:
             return utils.straighten_image(picture_)
 
         return picture_
-        
 
     def upload(self, picture, numbers, processing_begin):
         data={'user':self.USER, 'password':self.PASS, 'ts':int(time.time()),
                 'numbers':numbers, 'begin':int(processing_begin)}
-        files = None
-        pic_fd = None
-        filename = os.path.join('/tmp', 'to_upload.png')
+
         if self.flag_upload_picture:
-            cv2.imwrite(filename, picture)
-            pic_fd = open(filename, 'rb')
-            files = {'picture' : pic_fd}
             self.flag_upload_picture=False
+            _, img_encoded = cv2.imencode('.jpg', picture)
+            data['raw_image'] = img_encoded.tostring()
+
         try:
-            requests.post(self.URL, data=data, files=files, verify=False)
+            requests.post("https://{}/write".format(self.URL), data=data, verify=False)
         except Exception as e:
             logging.exception("Failed to submit request: {0}".format(e))
 
-        if pic_fd is not None:
-            pic_fd.close()
-            os.remove(filename)
 
 if __name__ == '__main__':
     from cv2 import imread
@@ -352,4 +351,4 @@ if __name__ == '__main__':
     picture = argv[1]
     pa = argv[2]
     img_rec = ImageRecognitor(pa)
-    img_rec.image_recognition(imread(picture))
+    img_rec.work_image(imread(picture))

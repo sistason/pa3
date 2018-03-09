@@ -2,7 +2,7 @@
 
 {% load i18n %}
 {% load static %}
-{% load pa2_timesinceseconds %}
+{% load pa3_timesinceseconds %}
 
 {% block title %}{% trans "Examination Office Project" %}{% endblock %}
 
@@ -34,23 +34,37 @@
 				{% if pa.prev %}
 					<br />
 					<span style=color:red>
-						{% blocktrans with pa.prev|timesinceseconds as prev %}Updated {{prev}} ago{% endblocktrans %}
+						{% blocktrans with pa.prev|timesinceseconds as prev %}
+                            Updated {{prev}} ago
+                        {% endblocktrans %}
 					</span>
 				{% endif %}
 				</span>
 				<span class="room">{{number.pa}}</span>
 				<span class="number">{{number.nr}}</span>
 				{% if number.prev %}
-					<span class="updated">{% blocktrans with number.prev|timesincesecondsonly as prev %}called {{prev}} before{% endblocktrans %}</span>
-					<span class="updated">{% blocktrans with number.avg|floatformat as avg %}<u>Average:</u> {{avg}} seconds{% endblocktrans %}</span> 
+					<span class="updated">
+                        {% blocktrans with number.prev|timesincesecondsonly as prev %}
+                            called {{prev}} before
+                        {% endblocktrans %}
+                    </span>
+					<span class="updated">
+                        {% blocktrans with number.avg|floatformat as avg %}
+                            <u>Average:</u> {{avg}} seconds
+                        {% endblocktrans %}
+                    </span>
 				{% else %}
 					<span class="updated">-<br />-</span>
 					{% if dbg %}
-						<span class="updated">{% blocktrans with number.avg|floatformat as avg %}<u>Average:</u> {{avg}} seconds{% endblocktrans %}</span> 
+						<span class="updated">
+                            {% blocktrans with number.avg|floatformat as avg %}
+                                <u>Average:</u> {{avg}} seconds
+                            {% endblocktrans %}
+                        </span>
 					{% endif%}
 				{% endif %}
 				{% if dbg %}
-					<hr ><img class="picture" src="/static/img/picture_{{pa.src}}.png" width="100" />
+					<hr ><img class="picture" src="/current_image/{{pa.src}}.jpeg" width="100" />
 				{% endif %}
 			</div>
 		{% endfor %}
@@ -64,7 +78,7 @@
 	{% endif %}
 	<div class="logo">
 		<a href="http://wiki.freitagsrunde.org">
-			<img src="http://wiki.freitagsrunde.org/skins/frunde/logo.png">
+			<img src="{%  static "pa3_web/img/frunde_logo.png" %}">
 		</a>
 	</div>
 </div>

@@ -25,17 +25,16 @@ PA_INDEX = {23: ['H 19', 'H 23', 'H 25'],
 CLIENT_PASSWORDS = {}
 for pa in PA_INDEX.keys():
     with open(os.path.join(BASE_DIR, 'secrets', 'pa_{:02}_pw.txt'.format(pa))) as f:
-        CLIENT_PASSWORDS[pa] = f.read().strip()
+        CLIENT_PASSWORDS['pa_{:02}'.format(pa)] = f.read().strip()
 
 PIC_DESTINATION='/dev/shm/pa2'
 
-OPENINGS = [
-			 {'begin': 930, 'end': 1230, 'weekday':1},
-			 {'begin': 1300, 'end': 1600, 'weekday':2},
-			 {'weekday':3},
-			 {'begin': 930, 'end': 1230, 'weekday':4},
-			 {'begin': 930, 'end': 1230, 'weekday':5}
-			 ]
+OPENINGS = [{'weekday': 1, 'begin': 930, 'end': 1230},
+            {'weekday': 2, 'begin': 1300, 'end': 1600},
+            {'weekday': 3},
+            {'weekday': 4, 'begin': 930, 'end': 1230},
+            {'weekday': 5, 'begin': 930, 'end': 1230}
+]
 
 
 # Quick-start development settings - unsuitable for production
@@ -50,7 +49,7 @@ with open(os.path.join(BASE_DIR, "secrets", "djangokey_pw.txt")) as f:
 DEBUG = True
 
 ALLOWED_HOSTS = ['pa.freitagsrunde.org', 'www.pa.freitagsrunde.org', 'pruefungsamt.org', 'www.pruefungsamt.org',
-                 '172.17.0.19']
+                 '172.17.0.19', 'pa3_frontend']
 
 
 # Application definition
@@ -74,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'pa3.urls'
@@ -133,12 +133,31 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/django_debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
 LANGUAGE_CODE = 'de-DE'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Berlin'
 
 USE_I18N = True
 
@@ -151,4 +170,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles/')

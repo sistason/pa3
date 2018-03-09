@@ -5,7 +5,6 @@ import copy	#for the usual cases of deepcopy...
 import _md5
 import json
 
-from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
@@ -26,21 +25,20 @@ logger_req = logging.getLogger('django.request')
 def index(request, src=None, subscribeform=None):
     errors, data = [], []
     now_ts = int(datetime.datetime.now().strftime('%s'))
-    dict = {'data': data, 'errors': errors,
-            'PA_frame': None, 'FR_frame': None, 'subscribeforms': []}
+    dict_ = {'data': data, 'errors': errors, 'PA_frame': None, 'FR_frame': None, 'subscribeforms': []}
 
     if src == "-1":
-        dict['dbg'] = True
+        dict_['dbg'] = True
         src = None
     else:
-        dict['single'] = True if src else False
-    dict['null'] = datetime.datetime.fromtimestamp(0)
+        dict_['single'] = True if src else False
+    dict_['null'] = datetime.datetime.fromtimestamp(0)
 
     if src:
         if int(src) in PA_INDEX.keys():
             srces = [src]
             if src == '13':
-                dict['dbg'] = True
+                dict_['dbg'] = True
         else:
             for paT, pas in PA_INDEX.items():
                 if re.search(src, ' '.join(pas)):
@@ -60,7 +58,7 @@ def index(request, src=None, subscribeform=None):
             try:
                 newest = num = WaitingNumberBatch.objects.filter(src=k).latest('date')
             except ObjectDoesNotExist:
-                errors.append('Warning! Database for the Display above Room H%s is empty!' % k)
+                errors.append('Warning! Database for the Display above Room H{:02} is empty!'.format(k))
                 continue
         except MultipleObjectsReturned:
             newest = num = WaitingNumberBatch.objects.filter(src=k).latest('date')
@@ -80,35 +78,21 @@ def index(request, src=None, subscribeform=None):
         data.append(nums)
 
     if not src:
-        dict = news_handling.update_news(dict)
-        dict['openings'] = OPENINGS
+        dict_ = news_handling.update_news(dict_)
+        dict_['openings'] = OPENINGS
 
     # for cli_handler in ClientHandler.objects.filter(active=True):
-    #     dict['subscribeforms'].append(SubscribeForm(
+    #     dict_['subscribeforms'].append(SubscribeForm(
     #         cli_handler.protocol))
     # if subscribeform:
     #     try:
-    #         [dict['subscribeforms'].remove(i) for i in dict['subscribeforms']
+    #         [dict_['subscribeforms'].remove(i) for i in dict_['subscribeforms']
     #          if i.protocol == subscribeform.protocol]
     #     except:
     #         pass
-    #     dict['subscribeforms'].insert(0, subscribeform)
+    #     dict_['subscribeforms'].insert(0, subscribeform)
 
-    # Simply log accesses
-    log_dir = os.path.join(BASE_DIR, 'pa3_web', 'logs')
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
-    logfile = os.path.join(log_dir, str(datetime.date.today()))
-    if not os.path.exists(logfile):
-        open(logfile, 'w').close()
-
-    with open(logfile, 'a') as f:
-        meta = request.META
-        _ip = meta.get('HTTP_X_FORWARDED_FOR', '') if meta.get('HTTP_X_FORWARDED_FOR', '') else meta.get('REMOTE_ADDR',
-                                                                                                         '')
-        f.write(str(datetime.datetime.now()) + ' ' + _ip + '\n')
-
-    return render_to_response('index.html', dict, RequestContext(request))
+    return render_to_response('index.html', dict_, RequestContext(request))
 
 
 def abuse(request, blacklistform=None):

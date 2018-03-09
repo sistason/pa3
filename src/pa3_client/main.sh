@@ -18,7 +18,7 @@ elif [[ $_last_octet == 84 ]]; then
     PA_NR=23
 elif [[ $_last_octet == 85 ]]; then
     PA_NR=02
-    ROTATE="--rotate 180"
+    ROTATE="-175"
 else
     echo "Pruefungsamt number not recognized by IP address"
     exit 1
@@ -30,7 +30,7 @@ sshfs -o"IdentityFile=~/.ssh/pa3_client_key" -o"StrictHostKeyChecking=no" -o"por
 while true; do
     fswebcam -l 1 -d /dev/video0 -r 1280x720 --no-banner \
       $ROTATE $image_dir/${PA_NR}_tmp.jpeg \
-      --exec "mv $image_dir/${PA_NR}_tmp.jpeg $image_dir/$PA_NR.jpeg"
+      --exec "if [ $ROTATE ]; then mogrify -rotate "${ROTATE}" $image_dir/${PA_NR}_tmp.jpeg; fi; mv $image_dir/${PA_NR}_tmp.jpeg $image_dir/$PA_NR.next.jpeg"
 
     sleep 5
 done

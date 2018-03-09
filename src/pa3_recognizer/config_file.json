@@ -2,8 +2,7 @@
    "02": {
         "user" : "pa_02",
         "numbers" : 1,
-        "ranges" : [[1, 300]],
-        "rotate" : -175
+        "ranges" : [[1, 300]]
     },
     "10": {
         "user" : "pa_10",

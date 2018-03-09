@@ -4,6 +4,7 @@ NAME=pa3
 RECOGNIZER=${NAME}_recognizer
 FRONTEND=${NAME}_frontend
 BACKEND=${NAME}_backend
+SERVER_URL="pa.freitagsrunde.org"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DATA_DIR=${DIR}/data/
@@ -21,9 +22,13 @@ for pwfile in ${DATA_DIR}/secrets/{mysql,pa_02,pa_10,pa_13,pa_23,djangokey}_pw.t
 done
 
 echo "rebuilding containers..."
-docker build -t $RECOGNIZER --file $DIR/Dockerfile_recognizer $DIR
-docker build -t $FRONTEND --file $DIR/Dockerfile_frontend $DIR
-docker build -t $BACKEND --file $DIR/Dockerfile_backend $DIR
+docker build -t $RECOGNIZER --file $DIR/Dockerfile_recognizer $DIR && \
+docker build -t $FRONTEND --file $DIR/Dockerfile_frontend $DIR && \
+docker build -t $BACKEND --file $DIR/Dockerfile_backend $DIR && success=true
+if ( ! $success ); then
+    echo "Error building containers!"
+    exit 1
+fi
 
 NET=${NAME}-net
 if ! docker inspect $NET &>/dev/null; then
@@ -41,9 +46,10 @@ docker run --rm -dit --name ${NAME}_mysql --net $NET -h ${NAME}_mysql \
 cp ${DATA_DIR}/secrets/* $DIR/src/pa3_frontend/pa3_django/secrets/  #TODO: remove on production
 mkdir -p "${DATA_DIR}/frontend_bindfs/" 2>/dev/null    #TODO: remove on production
 umount "${DATA_DIR}/frontend_bindfs/" 2>/dev/null
-bindfs "$DIR/src/pa3_frontend/pa3_django" "${DATA_DIR}/frontend_bindfs" -o "force-user=0,force-group=0"  #TODO: remove on production
-docker run --rm -dit --name $FRONTEND -h $BACKEND -p 9080:80 -p 9433:443 --net $NET \
-    --mount type="bind",source="${DATA_DIR}/frontend_bindfs",destination="/root/pa3_django" \
+bindfs "$DIR/src/pa3_frontend/pa3_django" "${DATA_DIR}/frontend_bindfs" -o "force-user=33,force-group=33"  #TODO: remove on production, + mount
+docker run --rm -dit --name $FRONTEND -h ${FRONTEND} -p 9080:80 -p 9433:443 --net $NET \
+    --mount type="bind",source="${DATA_DIR}/frontend_bindfs",destination="/srv/pa3_django" \
+    --mount type="bind",source="${DATA_DIR}/current_images/",destination="/srv/current_images/" \
     ${FRONTEND}
 
 if [ ! -e "${DATA_DIR}/current_images/" ]; then mkdir -p "${DATA_DIR}/current_images/"; fi
@@ -57,6 +63,9 @@ for pa_client in 02 10 13 23; do
     echo $_name
     docker run --rm -dit --name ${_name} --network=${NET} --hostname=${_name} \
     --mount type="bind",source="$DATA_DIR/current_images/",destination="/root/current_images/" \
+    -e "CLIENT_PASSWORD=$(<${DATA_DIR}/secrets/pa_${pa_client}_pw.txt)" \
+    -e "SERVER_URL=$SERVER_URL" \
     ${RECOGNIZER}
+    # add $SERVER_URL here to /etc/hosts
 done
 

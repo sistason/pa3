@@ -4,6 +4,7 @@ import numpy as np
 import math
 import logging
 
+
 def find_nums_in_whole(img, template):
     """Find template"""
     try:
@@ -16,8 +17,8 @@ def find_nums_in_whole(img, template):
         found_point.append(max_loc[0]+temp_width)
         found_point.append(max_loc[1]+temp_height)
         return found_point
-    except Exception, e:
-        return (None, e)
+    except Exception as e:
+        return None, e
 
 def find_outer_edges(img, one_ratio=0.7):
     # ------ Find Area of Interest (the numbers only) ------------
@@ -207,25 +208,5 @@ def digit_recog(img, one_ratio=0.7):
             continue
         return num, certanty
 
-#    print 'Nope, number == -1'
-#    print 'Top:   ', top
-#    print 'TLeft: ', top_left
-#    print 'TRight:', top_right
-#    print 'Mid:   ', middle
-#    print 'BLeft: ', bot_left
-#    print 'BRight:', bot_right
-#    print 'Bot:   ', bot
-
-#    img_draw = cv2.cvtColor(img_num.copy(), cv2.cv.CV_GRAY2BGR)
-#    cv2.rectangle(img_draw, (center_l,top_l), (center_r,top_r), (0,0,255), 1)
-#    cv2.rectangle(img_draw, (left_l,top_mid_l), (left_r,top_mid_r), (0,0,255), 1)
-#    cv2.rectangle(img_draw, (right_l,top_mid_l), (right_r,top_mid_r), (0,0,255), 1)
-#    cv2.rectangle(img_draw, (center_l,mid_l), (center_r,mid_r), (0,0,255), 1)
-#    cv2.rectangle(img_draw, (left_l,bot_mid_l), (left_r,bot_mid_r), (0,0,255), 1)
-#    cv2.rectangle(img_draw, (right_l,bot_mid_l), (right_r,bot_mid_r), (0,0,255), 1)
-#    cv2.rectangle(img_draw, (center_l,bot_l), (center_r,bot_r), (0,0,255), 1)
-#    cv2.imwrite('/tmp/rect.png', img_draw)
-
-#    utils.plotImage(img_draw, title='Segment Locations')
     return -1, 0
 

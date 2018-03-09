@@ -223,17 +223,17 @@ msgstr ""
 msgid ", %(number)d %(type)s"
 msgstr ""
 
-#~ msgid "Monday"
-#~ msgstr "Montag"
+msgid "Monday"
+msgstr "Montag"
 
-#~ msgid "Tuesday"
-#~ msgstr "Dienstag"
+msgid "Tuesday"
+msgstr "Dienstag"
 
-#~ msgid "Wednesday"
-#~ msgstr "Mittwoch"
+msgid "Wednesday"
+msgstr "Mittwoch"
 
-#~ msgid "Thursday"
-#~ msgstr "Donnerstag"
+msgid "Thursday"
+msgstr "Donnerstag"
 
-#~ msgid "Friday"
-#~ msgstr "Freitag"
+msgid "Friday"
+msgstr "Freitag"
