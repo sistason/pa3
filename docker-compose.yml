@@ -1,0 +1,141 @@
+version: '3.4'
+
+x-recognizer-template:
+    &defaults-recognizer
+    image: 127.0.0.1:5000/pa3_recognizer
+    build:
+      context: .
+      dockerfile: Dockerfile_recognizer
+    working_dir: /root
+    privileged: true #TODO: device /dev/video0
+    extra_hosts:    #TODO: remove on production, as the DNS is then correct
+     - "pa.freitagsrunde.org: 172.18.0.1"
+    networks:
+      - net
+    environment:
+        SERVER_URL: pa.freitagsrunde.org
+        CAMERA: 0
+    depends_on:
+      - registry
+      - frontend
+    secrets:
+        - recognizer-auth
+
+x-recognizer-template-deploy:
+    &defaults-recognizer-deploy
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 120s
+
+services:
+  registry:
+    image: registry:2
+    restart: unless-stopped
+    networks:
+      - net
+    ports:
+      - "5000:5000"
+
+  frontend:
+    working_dir: /srv
+    image: frontend:localhost:5000/pa3_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile_frontend
+    volumes:
+      - type: bind  #TODO: remove on production, use ADD in Dockerfile
+        source: ./data/frontend_bindfs
+        target: /srv/pa3_django
+    networks:
+      - net
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 10s
+      placement:
+        constraints:
+          - node.role == manager
+        
+    depends_on:
+      - mysql
+      - registry
+    secrets:
+        - django-secret-key
+        - mysql-root-password
+
+  mysql:
+    container_name: pa3_mysql
+    hostname: pa3_mysql
+    image: mysql
+    volumes:
+      - type: bind
+        source: ./data/mysql 
+        target: /var/lib/mysql
+    networks:
+      - net
+    restart: unless-stopped
+    environment:
+        MYSQL_DATABASE: pa3_django
+        MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql-root-password
+    secrets:
+        - mysql-root-password
+
+  # Note: If you use more recognizers, consider deploying them with bash, 
+  # since compose cannot deal with non-identical containers in the swarm.
+  recognizer_02:
+    << : *defaults-recognizer
+    hostname: pa3_recognizer_02
+    deploy:
+      << : *defaults-recognizer-deploy
+      placement:
+        constraints:
+          - node.hostname == recognizer02
+
+  recognizer_10:
+    << : *defaults-recognizer
+    hostname: pa3_recognizer_10
+    deploy:
+      << : *defaults-recognizer-deploy
+      placement:
+        constraints:
+          - node.hostname == recognizer10
+
+  recognizer_23:
+    << : *defaults-recognizer
+    hostname: pa3_recognizer_23
+    deploy:
+      << : *defaults-recognizer-deploy
+      placement:
+        constraints:
+          - node.hostname == recognizer23
+
+networks:
+  net:
+    driver: overlay
+    ipam:
+      config:
+        - subnet: 172.18.0.16/28
+  web:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/30
+#    options:
+#        "com.docker.network.bridge.name": br-docker-pa3
+    # Create this externally, to specify the bridge-name
+#    external:
+#      name: pa3-net
+
+secrets:
+    mysql-root-password:
+        file: ./data/secrets/mysql-root-password
+    django-secret-key:
+        file: ./data/secrets/django-secret-key
+    recognizer-auth:
+        file: ./data/secrets/recognizer-auth
