@@ -5,7 +5,7 @@ class News(models.Model):
     choices_src=zip(('FR', 'PA'), ('FR','PA'))
     src = models.CharField(max_length=2, choices=choices_src)
 
-    date = models.IntegerField()
+    date = models.DateTimeField()
     news = models.TextField()
     last_checked = models.IntegerField()
 

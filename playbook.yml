@@ -1,0 +1,34 @@
+---
+- name: Install docker on all hosts
+  hosts: none   #web
+  tasks:
+    - include_tasks: src/playbook_install_docker.yml
+
+
+- name: Setup secrets
+  hosts: none #localhost
+  connection: local
+  tasks:
+    - include_tasks: src/playbook_create_secrets.yml
+      vars:
+        secret_path_mysql_root_password: data/secrets/mysql_root_password
+        secret_path_django_secret_key: data/secrets/django_secret_key
+        secret_path_recognizer_auth: data/secrets/recognizer_auth
+
+
+- name: Synchronize, build and run containers on the webhost
+  hosts: localhost #web
+  connection: local
+  tasks:
+    - include_tasks: src/pa3_frontend/playbook_tasks.yml
+      vars:
+        server_url: pa3.sistason.de
+        frontend_directory: /srv/pa3
+
+
+- name: Synchronize, build and run recognizer-containers on the recognizers
+  hosts: none #recognizers
+  tasks:
+    - include_tasks: src/pa3_recognizer/playbook_tasks.yml
+      vars:
+        server_url: pa3.sistason.de

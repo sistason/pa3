@@ -10,11 +10,11 @@ from django.utils.translation import ugettext
 from django.views.decorators.csrf import csrf_exempt
 
 from pa3_web.forms import SubscribeForm, BlacklistForm
-from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch, StatisticalData, ClientHandler
-from pa3.settings import PA_INDEX, CLIENT_PASSWORDS, OPENINGS, BASE_DIR
+from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch, StatisticalData
+from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, BASE_DIR
 
 
-from pa3_web.views import abuse, index
+from pa3_web.views import index
 
 import logging
 logger = logging.getLogger('web')
@@ -22,30 +22,7 @@ logger_sub = logging.getLogger('subscribe')
 
 
 def call_clients(payload, protocol='', meta={}):
-    #make sure pa2 does not crash whatever happens there.
-    logger.debug("Payload for clients: %s" % str(payload))
-    _ip = meta.get('HTTP_X_FORWARDED_FOR','') if meta.get('HTTP_X_FORWARDED_FOR','') else meta.get('REMOTE_ADDR','')
-    _date = str(datetime.datetime.now())
-
-    clients = ClientHandler.objects.filter(active=True)
-    if protocol:
-        clients = clients.filter(protocol=protocol)
-
-    ret = []
-
-    for client in clients:
-        req = requests.post(client.address, data=payload)
-        if req.status_code == 200:
-            ret.append((True, ugettext('Success!')))
-            logger.debug("Payload successfull for client {0}".format(client.name))
-            if payload['action'] != 'number':
-                logger_sub.info('Success: {0}|{1}|{2}|{3}'.format(_ip, client.protocol, client.name, str(payload)))
-        else:
-            ret.append((False, "{0}: {1}".format(ugettext('Fail!'), req.status_code)))
-            logger.info("Payload unsuccessfull for client {0}: {1}".format(client.name, req.status_code))
-            logger_sub.info('Fail   :{4} - {0}|{1}|{2}|{3}'.format(_ip, client.protocol, client.name,
-                                                                   str(payload), req.status_code))
-    return ret
+    return []
 
 
 def subscribe_client(request):
@@ -74,67 +51,21 @@ def subscribe_client(request):
     return index(request, subscribeform=form)
 
 
-def blacklist_client(request):
-    logger.debug("blacklist_client")
-    if request.method == 'POST':
-        form = BlacklistForm(request.POST)
-        if form.is_valid():
-            payload = { 'action'   : 'blacklist',
-                        'recipient': form.data['address'],
-                        'duration' : str(60*24*7)}
-            for (ret, output) in call_clients(payload, protocol=form.data['protocol'], meta=request.META):
-                if not ret:
-                    form.add_form_error(output)
-                else:
-                    form.success.append(output)
-        else:
-            logger.info(str(form.errors))
-    else:
-        form = None
-    return abuse(request, blacklistform=form)
-
-
-def register_handler(request):
-    logger.debug("Register_handler")
-    if request.method == 'POST' and request.is_secure():
-        try:
-            handler = ClientHandler.objects.get(
-                                    name=request.POST.get('name',''),
-                                    protocol=request.POST.get('protocol',''))
-        except (MultipleObjectsReturned, ObjectDoesNotExist):
-            logger_sub.debug('Handler {1}:{0} does not exist!'.format(
-                        request.POST.get('name',''),request.POST.get('protocol','')))
-            return HttpResponse(status=418, content="I'm a teapot\n")
-        if request.POST.get('password','') != handler.password:
-            logger_sub.info('Handler {1}{0} permission denied! Password: {2}'.format(
-                    handler.name, handler.protocol, request.POST.get('password','')))
-            return HttpResponse(status=401, content="permission denied\n")
-
-        handler.active = False if request.POST.get('unregister',False) else True
-        handler.save()
-        logger_sub.debug('Handler {0} registered successfully'.format(handler.name))
-    else:
-        logger_sub.info('Handler tried it without HTTPS...')
-        return HttpResponse(status=401, content="Unauthorized\n")
-
-    return HttpResponse(status=201)
-
-
 @csrf_exempt
 def write(request):
     if not request.POST or not {'user', 'password', 'ts',
-                                    'numbers', 'begin'}.issubset(request.POST):
+                                'numbers', 'begin'}.issubset(request.POST):
         logger.info("received an invalid write request: %s" % request)
         return HttpResponse(status=401, content='POST request incomplete!\n')
 
-    if request.POST['user'] not in CLIENT_PASSWORDS.keys() or \
-            CLIENT_PASSWORDS.get(request.POST.get('user', '')) != request.POST.get('password'):
+    if request.POST.get('user') not in USER_TO_NAMES.keys() or \
+            RECOGNIZER_AUTH != request.POST.get('password'):
         logger.info("received an unauthorized write request: %s" % request)
         return HttpResponse(status=401, content="permission denied!\n")
 
     #---------------------- validating input ---------------------
 
-    numbers=[]
+    numbers = []
     for number in request.POST.get('numbers', '').strip().split(' '):
         if number.isdigit():
             numbers.append(int(number))
@@ -147,20 +78,12 @@ def write(request):
     except ValueError:
         ts = 0
         begin_ts = 0.0
-    try:
-        #$foo_$src is mandatory syntax or user-ID, else change here
-        src = request.POST['user'].split('_')
-        src = int(src[1]) if len(src)==2 else -1
-    except ValueError:
-        src = -1
+
+    src = request.POST.get('user')
 
     logger.info('{} {} {} {}'.format(src, ts, begin_ts, numbers))
-    if src < 0 or not ts or not begin_ts or src not in PA_INDEX.keys() or \
-                                len(numbers) > len(PA_INDEX[src]):
+    if not src or not ts or not begin_ts or len(numbers) != len(USER_TO_NAMES[src]):
         return HttpResponse(status=400, content='did not validate!\n')
-
-    while len(numbers) < len(PA_INDEX[src]):
-        numbers.append(-1)
 
     request_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if not request_ip:
@@ -179,10 +102,12 @@ def write(request):
 #        opening_time['begin'] > int(date_.strftime('%H%M')) or \
 #        opening_time['end'] < int(date_.strftime('%H%M'))-60:    #60min buffer
 #
+    print(numbers, ts, src)
+
     num_batch_newest, old_num_batch = _get_old_batches(src)
-    old_numbers = list(old_num_batch.numbers.all())
+    old_numbers = list(old_num_batch.numbers.all()) if old_num_batch else []
     new_batch = None
-    for num, _src in zip(numbers, PA_INDEX[src]):
+    for num, _src in zip(numbers, USER_TO_NAMES[src]):
 
         old_num_obj = None
         if old_num_batch is not None:
@@ -195,7 +120,9 @@ def write(request):
 
         # compute delta, if not first DB-Entry
         new_number_date_delta = ts - old_num_obj.date if old_num_obj else -1
-        new_num_obj = WaitingNumber(number=num, src=_src, date=ts, date_delta=new_number_date_delta)
+        new_num_obj = WaitingNumber(number=num, src=_src, date=ts,
+                                    date_delta=new_number_date_delta,
+                                    proc_delay=time.time() - begin_ts)
         new_num_obj.save()
 
         if not new_batch:
@@ -213,10 +140,11 @@ def write(request):
             _update_stats(_src, new_number_date_delta, new_batch, ts)
 
         # update clients. -1 means no change. Use API for initial values
-        payload = { 'action' : 'number',
-                    'number' : str(num),
-                    'src' : _src,
-                    'ts' : str(ts)}
+        payload = {'action': 'number',
+                   'number': str(num),
+                   'src': _src,
+                   'ts': str(ts)
+                   }
         call_clients(payload)
 
     if num_batch_newest is None:

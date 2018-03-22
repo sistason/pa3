@@ -1,0 +1,15 @@
+#FROM rickryan/rpi-jessie-opencv3.2
+FROM python:2.7
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python-requests python-opencv
+#RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python-requests
+#RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y vim
+
+RUN mkdir /root/current_images
+RUN mkdir /run/secrets/
+
+COPY recognizer_auth /run/secrets/
+COPY recognition /root/
+
+CMD ["python", "/root/paProj.py"]
+#CMD ["/bin/bash"]

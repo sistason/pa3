@@ -1,0 +1,26 @@
+---
+- name: Copy pa3_recognizer src to the host
+  synchronize:
+    src: src/pa3_recognizer
+    dest: /root/
+
+- name: Copy necessary secrets
+  synchronize:
+    src: data/secrets/recognizer_auth
+    dest: /root/pa3_recognizer/
+
+- name: Build recognizer (docker build already has the idempotence)
+  command: docker build -t pa3_recognizer:latest -f /root/pa3_recognizer/Dockerfile_recognizer /root/pa3_recognizer
+
+- name: Start the recognizer container on the host
+  docker_container:
+    name: pa3_recognizer
+    hostname: "pa3_{{ inventory_hostname }}"
+    image: pa3_recognizer
+    state: started
+    devices:
+      - "/dev/video0:/dev/video0:rwm"
+    env:
+      SERVER_URL: "{{ server_url }}"
+      CAMERA: 0
+

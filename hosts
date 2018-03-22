@@ -1,0 +1,7 @@
+web             ansible_host=52.59.225.193
+
+[recognizers]
+recognizer_pa_10    ansible_host=130.149.233.82
+recognizer_pa_02    ansible_host=130.149.233.84
+recognizer_pa_23    ansible_host=130.149.233.85
+

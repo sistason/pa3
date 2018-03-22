@@ -16,18 +16,18 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Pruefungsamt variables
-PA_INDEX = {23: ['H 19', 'H 23', 'H 25'],
-            10: ['H 10'],
-            13: ['Schalter 1/2', 'Schalter 3/4', 'Schalter 5/6', 'Schalter 7/8/9', 'Schalter 10/11'],
-            2: ['H 02'],
-            }
 
-CLIENT_PASSWORDS = {}
-for pa in PA_INDEX.keys():
-    with open(os.path.join(BASE_DIR, 'secrets', 'pa_{:02}_pw.txt'.format(pa))) as f:
-        CLIENT_PASSWORDS['pa_{:02}'.format(pa)] = f.read().strip()
+USER_TO_NAMES = {'pa_23': ['H 19', 'H 23', 'H 25'],
+                 'pa_10': ['H 10'],
+                 'pa_13': ['Schalter 1/2', 'Schalter 3/4', 'Schalter 5/6', 'Schalter 7/8/9', 'Schalter 10/11'],
+                 'pa_02': ['H 02'],
+                }
 
-PIC_DESTINATION='/dev/shm/pa2'
+with open(os.path.join('/run', "secrets", "recognizer_auth")) as f:
+    RECOGNIZER_AUTH = f.read().strip()
+
+IMAGE_DESTINATION = '/dev/shm/'
+
 
 OPENINGS = [{'weekday': 1, 'begin': 930, 'end': 1230},
             {'weekday': 2, 'begin': 1300, 'end': 1600},
@@ -41,7 +41,7 @@ OPENINGS = [{'weekday': 1, 'begin': 930, 'end': 1230},
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-with open(os.path.join(BASE_DIR, "secrets", "djangokey_pw.txt")) as f:
+with open(os.path.join('/run', "secrets", "django_secret_key")) as f:
     # SECRET_KEY = 'h-b=@zve0t)8k_5&mfo057b^3l&u)69+dy)99=54f4q_!zsg5a'
     SECRET_KEY = f.read().strip()
 
@@ -49,7 +49,7 @@ with open(os.path.join(BASE_DIR, "secrets", "djangokey_pw.txt")) as f:
 DEBUG = True
 
 ALLOWED_HOSTS = ['pa.freitagsrunde.org', 'www.pa.freitagsrunde.org', 'pruefungsamt.org', 'www.pruefungsamt.org',
-                 '172.17.0.19', 'pa3_frontend']
+                 '172.16.0.4', 'pa3_frontend', 'pa3.sistason.de', 'www.pa3.sistason.de', 'localhost', '172.16.0.6']
 
 
 # Application definition
@@ -97,7 +97,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'pa3.wsgi.application'
 
 
-with open(os.path.join(BASE_DIR, "secrets", "mysql_pw.txt")) as f:
+with open(os.path.join('/run', "secrets", "mysql_root_password")) as f:
     mysql_pw = f.read()
 
 # Database

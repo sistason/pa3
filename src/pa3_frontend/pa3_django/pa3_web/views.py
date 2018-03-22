@@ -13,8 +13,8 @@ from django.http import HttpResponse
 import logging
 
 from pa3_web.forms import SubscribeForm, BlacklistForm
-from pa3.models import WaitingNumberBatch, NewestNumberBatch, ClientHandler, StatisticalData
-from pa3.settings import PA_INDEX, OPENINGS, DATABASES, BASE_DIR
+from pa3.models import WaitingNumberBatch, NewestNumberBatch, StatisticalData
+from pa3.settings import USER_TO_NAMES, OPENINGS, DATABASES, BASE_DIR
 
 from pa3_web import news_handling
 
@@ -23,32 +23,27 @@ logger_req = logging.getLogger('django.request')
 
 
 def index(request, src=None, subscribeform=None):
-    errors, data = [], []
+    data = []
     now_ts = int(datetime.datetime.now().strftime('%s'))
-    dict_ = {'data': data, 'errors': errors, 'PA_frame': None, 'FR_frame': None, 'subscribeforms': []}
+    dict_ = {'data': data, 'PA_frame': None, 'FR_frame': None, 'subscribeforms': []}
 
-    if src == "-1":
-        dict_['dbg'] = True
-        src = None
-    else:
-        dict_['single'] = True if src else False
     dict_['null'] = datetime.datetime.fromtimestamp(0)
 
     if src:
-        if int(src) in PA_INDEX.keys():
+        if src in USER_TO_NAMES.keys():
             srces = [src]
             if src == '13':
                 dict_['dbg'] = True
         else:
-            for paT, pas in PA_INDEX.items():
+            for paT, pas in USER_TO_NAMES.items():
                 if re.search(src, ' '.join(pas)):
                     srces = [paT]
                     break
             else:
-                srces = [2, 10, 23]
+                srces = ["pa_02", "pa_10", "pa_23"]
                 src = None
     else:
-        srces = [2, 10, 23]
+        srces = ["pa_02", "pa_10", "pa_23"]
 
     for k in srces:
         try:
@@ -58,21 +53,17 @@ def index(request, src=None, subscribeform=None):
             try:
                 newest = num = WaitingNumberBatch.objects.filter(src=k).latest('date')
             except ObjectDoesNotExist:
-                errors.append('Warning! Database for the Display above Room H{:02} is empty!'.format(k))
+                logging.warning('Warning! Database for the Display above Room {} is empty!'.format(k))
                 continue
         except MultipleObjectsReturned:
             newest = num = WaitingNumberBatch.objects.filter(src=k).latest('date')
 
         numbers = num.numbers.all()
         updated = newest.date if now_ts - newest.date > 10 else 0
-        nums = {'prev': updated, 'src': num.src, 'numbers': []}
+        nums = {'prev': updated, 'src': num.src, 'numbers': [], 'src_nr': num.src[3:]}
         for i in numbers:
             date_long = i.date if now_ts - i.date < 60 * 30 else 0
-            try:
-                avg_ = StatisticalData.objects.get(src=i.src).avg_whole
-            except (MultipleObjectsReturned, ObjectDoesNotExist):
-                avg_ = 0
-            nums['numbers'].append({'pa': i.src, 'nr': i.number, 'prev': date_long, 'avg': avg_})
+            nums['numbers'].append({'pa': i.src, 'nr': i.number, 'prev': date_long})
         nums['numbers'].sort(key=lambda a: int(re.search(r'(\d+)/?', a['pa']).group(1)))
 
         data.append(nums)
@@ -93,13 +84,6 @@ def index(request, src=None, subscribeform=None):
     #     dict_['subscribeforms'].insert(0, subscribeform)
 
     return render_to_response('index.html', dict_, RequestContext(request))
-
-
-def abuse(request, blacklistform=None):
-    dict_ = {}
-    dict_['blacklist_form'] = blacklistform if blacklistform else BlacklistForm()
-
-    return render_to_response('abuse.html', dict_, RequestContext(request))
 
 
 def update_dump(request):
@@ -134,7 +118,7 @@ def update_dump(request):
 def api2(request, paT=None, ops=None, pa=None):
     entries = []
 
-    pa_rooms = [paT] if paT else PA_INDEX.keys()
+    pa_rooms = [paT] if paT else USER_TO_NAMES.keys()
     for pa_room in pa_rooms:
         try:
             newest = NewestNumberBatch.objects.get(src=pa_room)  # get newest WaitingNumberBatch via newest-table
@@ -215,7 +199,7 @@ def api2(request, paT=None, ops=None, pa=None):
 
 
 def api(request, paT=None, ops=None, pa=None):
-    src = [paT] if paT else PA_INDEX.keys()
+    src = [paT] if paT else USER_TO_NAMES.keys()
     dict = {'entries': [], 'errors': [], 'openings': OPENINGS}
     try:
         if ops and pa:

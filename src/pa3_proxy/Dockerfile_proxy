@@ -1,0 +1,10 @@
+FROM nginx:stable
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y letsencrypt
+
+COPY proxy.conf /etc/nginx/conf.d/
+COPY entrypoint.sh /root/
+
+RUN mkdir -p /var/www/letsencrypt
+
+ENTRYPOINT [ "/bin/bash", "/root/entrypoint.sh" ]
+CMD [ "/bin/bash" ]

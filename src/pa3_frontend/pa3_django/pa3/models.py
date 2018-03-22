@@ -1,12 +1,13 @@
 from django.db import models
-from pa3.settings import PA_INDEX
+from pa3.settings import USER_TO_NAMES
 
 
 class WaitingNumber(models.Model):
-    choices_src = zip(PA_INDEX.values(), PA_INDEX.values())
-    src = models.CharField(max_length=14, choices=choices_src)
+    choices_src = zip(USER_TO_NAMES.values(), USER_TO_NAMES.values())
+    src = models.CharField(choices=choices_src, max_length=50)
     date = models.IntegerField()
     date_delta = models.IntegerField(null=True)
+    proc_delay = models.FloatField(null=True)
     number = models.SmallIntegerField()
     
     class Meta:
@@ -17,8 +18,8 @@ class WaitingNumber(models.Model):
 
 
 class WaitingNumberBatch(models.Model):
-    choices_src = zip(PA_INDEX.keys(), ['H%s: %s' % (k,', '.join(v)) for k,v in PA_INDEX.items()])
-    src = models.IntegerField(choices=choices_src, db_index=True)
+    choices_src = zip(USER_TO_NAMES.keys(), ['H%s: %s' % (k,', '.join(v)) for k,v in USER_TO_NAMES.items()])
+    src = models.CharField(choices=choices_src, db_index=True, max_length=50)
     src_ip = models.GenericIPAddressField()
 
     date = models.IntegerField(db_index=True)
@@ -30,26 +31,26 @@ class WaitingNumberBatch(models.Model):
         ordering = ['-date', 'src']
 
     def __unicode__(self):
-        return str(self.src)+' | '+str(self.date)
+        return '{} | {}'.format(self.src, str(self.date))
 
 
 class NewestNumberBatch(models.Model):
     # To minimze database queries, the newest Batch gets stored seperately and 
     # only contains the newest WaitingNumberBatch
-    choices_src = zip(PA_INDEX.keys(), ['H%s: %s' % (k,', '.join(v)) for k,v in PA_INDEX.items()])
-    src = models.IntegerField(choices=choices_src)
+    choices_src = zip(USER_TO_NAMES.keys(), ['H%s: %s' % (k,', '.join(v)) for k,v in USER_TO_NAMES.items()])
+    src = models.CharField(choices=choices_src, max_length=50)
     date = models.IntegerField()
     newest = models.ForeignKey(WaitingNumberBatch, on_delete=None)
 
     def __unicode__(self):
-        return str(self.src)+' | '+str(self.newest)
+        return '{} | {}'.format(self.src, str(self.newest))
 
 
 class StatisticalData(models.Model):
     # Stores statistical information on the numbers, to minimize the 
     # computation effort
-    choices_src = zip(PA_INDEX.values(), PA_INDEX.values())
-    src = models.CharField(max_length=14, choices=choices_src)
+    choices_src = zip(USER_TO_NAMES.values(), USER_TO_NAMES.values())
+    src = models.CharField(max_length=50, choices=choices_src)
 
     date = models.IntegerField()    #for sorting purposes
 
@@ -57,8 +58,8 @@ class StatisticalData(models.Model):
     avg_len = models.IntegerField()    #Length over which the avg is computed (count())
     avg_sum = models.IntegerField()    #Sum from which the avg is computed (avg=sum/len)
 
-    avg_proc_delay_sum = models.IntegerField()    #Sum from which the avg_proc_delay is computed (avg=sum/len)
-    avg_proc_delay_len = models.IntegerField()    #Len from which the avg_proc_delay is computed (avg=sum/len)
+    avg_proc_delay_sum = models.IntegerField(null=True)    #Sum from which the avg_proc_delay is computed (avg=sum/len)
+    avg_proc_delay_len = models.IntegerField(null=True)    #Len from which the avg_proc_delay is computed (avg=sum/len)
 
     avg_last_two_weeks = models.FloatField()    #recomputed every night
     avg_last_same_day = models.FloatField()        #recomputed every night
@@ -68,21 +69,3 @@ class StatisticalData(models.Model):
 
     def __unicode__(self):
         return '{self.src}: Avg={self.avg} for {self.avg_len} entries'.format(self=self)
-
-
-class ClientHandler(models.Model):
-    #A ClientHandler handles the subscriptions and updates to its clients 
-    #for its protocol. Communication is started through the webinterface or 
-    #the Client itself, but is continued only between the ClientHandler and 
-    #the Client. Each ClientHandler has to register to the server to get 
-    #updates, and subscriptions through the webinterface.
-    #
-    #The ClientHandler and the server speak HTTP.
-    name = models.CharField(max_length=100)        #description (kais jabberbot)
-    protocol = models.CharField(max_length=20)    #protocol (mail, xmpp, ...)
-    address = models.CharField(max_length=500)    #HTTP-url
-    password = models.CharField(max_length=100)    #pw for the server to validate
-    active = models.BooleanField()    #flag to see which handlers are operational
-
-    def __unicode__(self):
-        return '%s - %s-Handler @ %s' % (self.name, self.protocol, self.address)
