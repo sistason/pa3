@@ -17,10 +17,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Pruefungsamt variables
 
-USER_TO_NAMES = {'pa_23': ['H 19', 'H 23', 'H 25'],
-                 'pa_10': ['H 10'],
-                 'pa_13': ['Schalter 1/2', 'Schalter 3/4', 'Schalter 5/6', 'Schalter 7/8/9', 'Schalter 10/11'],
-                 'pa_02': ['H 02'],
+USER_TO_NAMES = {'pa_23': {'placement': 'H 23', 'displays': ['H 19', 'H 23', 'H 25']},
+                 'pa_10': {'placement': 'H 10', 'displays': ['H 10']},
+                 'pa_13': {'placement': 'H 13', 'displays':
+                     ['Schalter 1/2', 'Schalter 3/4', 'Schalter 5/6',
+                      'Schalter 7/8/9', 'Schalter 10/11']},
+                 'pa_02': {'placement': 'H 02', 'displays': ['H 02']},
                 }
 
 with open(os.path.join('/run', "secrets", "recognizer_auth")) as f:
@@ -138,7 +140,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/var/log/django_debug.log',
         },
@@ -147,6 +149,11 @@ LOGGING = {
         'django': {
             'handlers': ['file'],
             'level': 'DEBUG',
+            'propagate': True,
+        },
+        '': {
+            'handlers': ['file'],
+            'level': 'INFO',
             'propagate': True,
         },
     },

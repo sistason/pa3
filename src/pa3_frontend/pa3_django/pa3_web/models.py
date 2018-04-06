@@ -5,9 +5,10 @@ class News(models.Model):
     choices_src=zip(('FR', 'PA'), ('FR','PA'))
     src = models.CharField(max_length=2, choices=choices_src)
 
+    title = models.CharField(max_length=500)
+    content = models.TextField()
+
     date = models.DateTimeField()
-    news = models.TextField()
-    last_checked = models.IntegerField()
 
     def __unicode__(self):
-        return '%s from %d: %s' % (self.src, self.date, self.news[50:])
+        return '{}: "{}" - {}'.format(self.src, self.title[:20], self.content[:100])

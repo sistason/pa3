@@ -2,3 +2,5 @@ Django>2.0
 mysqlclient
 ipython
 requests
+bs4
+lxml

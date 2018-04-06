@@ -3,8 +3,11 @@
 {% load i18n %}
 {% load static %}
 {% load pa3_timesinceseconds %}
+{% load pa3_secondssince %}
 
 {% block title %}{% trans "Examination Office Project" %}{% endblock %}
+{% block head %}
+{% endblock %}
 
 {% block content %}
 
@@ -17,33 +20,34 @@
 	{% for pa in data %}
 		{% for number in pa.numbers %}
 			<div class="number-box">
-				<span class="location">{% trans "Table at" %} <a name={{pa.src}} href="/{{pa.src}}">H {{pa.src_nr}}</a>
-				{% if pa.prev %}
-					<br />
-					<span style=color:red>
-						{% blocktrans with pa.prev|timesinceseconds as prev %}
-                            Updated {{prev}} ago
-                        {% endblocktrans %}
-					</span>
-				{% endif %}
+				<span class="location">
+                    {% trans "Table at" %} <a name={{pa.src}} href="/{{pa.src}}">{{pa.src_verbose}}</a>
+                    {% if pa.newest_date|secondssince > 10 %}
+                        <br />
+                        <span style=color:red>
+                            {% blocktrans with pa.newest_date|timesinceseconds as updated %}
+                                Updated {{ updated }} ago
+                            {% endblocktrans %}
+                        </span>
+                    {% endif %}
 				</span>
-				<span class="room">{{number.pa}}</span>
-				<span class="number">{{number.nr}}</span>
-				{% if number.prev %}
-					<span class="updated">
-                        {% blocktrans with number.prev|timesincesecondsonly as prev %}
-                            called {{prev}} before
+				<span class="room">{{number.src}}</span>
+				<span class="number">{{number.num}}</span>
+				    {% if number.date|secondssince < 1800 %}
+                        <span class="updated">
+                        {% blocktrans %}
+                            called {{ number.date|timesincesecondsonly }} before
                         {% endblocktrans %}
-                    </span>
-				{% endif %}
-                <hr ><img class="picture" src="/current_image/{{pa.src}}.jpeg" width="100" />
+                        </span>
+                    {% endif %}
+                <hr ><img class="picture" src="/current_images/{{pa.src}}.jpeg" width="100" />
 			</div>
 		{% endfor %}
 	{% endfor %}
 </div>
 
 <div class=applets>
-	{% if FR_frame or PA_frame %}
+	{% if news %}
 		{% include "frameOpenings.html" %}<br />
 		{# {% include "frameSubscribe.html" %}<br />   #}
 	{% endif %}
@@ -62,30 +66,34 @@
 	{% include "currentstatus.html" %}
 	<hr />
 
-	<div class="fr_frame">
+
+	<div id="fr_frame">
     {% if news.fr_error %}
-        <p class="framehead">{% trans news.fr_error %}</p>
+        <p class="framehead">{% trans news.fr_error|safe %}</p>
     {% else %}
+
         <p class="framehead">
-            <u>{% trans "News from the Freitagsrunde" %}</u>
-            <br />
-            {{news.fr_news.date|date:"D, j. F Y"}}
+            <u>{% trans "News from the Freitagsrunde" %}</u><br />
+            {{ news.fr_news.title }}
         </p>
-		{{ news.fr_news.news|safe }}
+        <p class="framecontent">
+		    {{ news.fr_news.content|safe }}
+        </p>
     {% endif %}
 	</div>
-	<div class="pa_frame">
+	<div id="pa_frame">
     {% if news.pa_error %}
-		<p class="framehead">{% trans news.pa_error %}</p>
+		<p class="framehead">{% trans news.pa_error|safe %}</p>
     {% else %}
         <p class="framehead">
-            <u>{% trans "News from the examination office" %}</u>
-            <br />
-            {{news.pa_news.date|date:"D, j. F Y"}}
+            <u>{% trans "News from the examination office" %}</u><br />
+            {{ news.pa_news.title }}
         </p>
-		{{ news.pa_news.news|safe }}
+        <p class="framecontent">
+		    {{ news.pa_news.content|safe }}
+        </p>
     {% endif %}
-	</div></div></div></div></div></div><!-- Die Pa-News sind nicht immer valide formatiert... -->
+	</div>
 	<div style="clear:both;"></div>
 
 	{% include "disclaimer.html" %}

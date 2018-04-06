@@ -1,22 +1,21 @@
-import os, shutil
-import re, time, datetime
-import requests
+import time, datetime
 
 from django.http import HttpResponse
-from django.db import IntegrityError
-from django.db.models import Sum
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+
+from django.core.files.storage import FileSystemStorage
 from django.utils.translation import ugettext
 from django.views.decorators.csrf import csrf_exempt
 
-from pa3_web.forms import SubscribeForm, BlacklistForm
+from pa3_web.forms import SubscribeForm
 from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch, StatisticalData
-from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, BASE_DIR
-
+from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, IMAGE_DESTINATION
 
 from pa3_web.views import index
+from pa3 import statistics_handling
 
 import logging
+
+
 logger = logging.getLogger('web')
 logger_sub = logging.getLogger('subscribe')
 
@@ -80,9 +79,9 @@ def write(request):
         begin_ts = 0.0
 
     src = request.POST.get('user')
+    displays = USER_TO_NAMES.get(src, {}).get('displays', [])
 
-    logger.info('{} {} {} {}'.format(src, ts, begin_ts, numbers))
-    if not src or not ts or not begin_ts or len(numbers) != len(USER_TO_NAMES[src]):
+    if not src or not ts or not begin_ts or len(numbers) != len(displays):
         return HttpResponse(status=400, content='did not validate!\n')
 
     request_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
@@ -102,12 +101,10 @@ def write(request):
 #        opening_time['begin'] > int(date_.strftime('%H%M')) or \
 #        opening_time['end'] < int(date_.strftime('%H%M'))-60:    #60min buffer
 #
-    print(numbers, ts, src)
-
     num_batch_newest, old_num_batch = _get_old_batches(src)
     old_numbers = list(old_num_batch.numbers.all()) if old_num_batch else []
     new_batch = None
-    for num, _src in zip(numbers, USER_TO_NAMES[src]):
+    for num, _src in zip(numbers, displays):
 
         old_num_obj = None
         if old_num_batch is not None:
@@ -120,9 +117,13 @@ def write(request):
 
         # compute delta, if not first DB-Entry
         new_number_date_delta = ts - old_num_obj.date if old_num_obj else -1
+        src_statistic = statistics_handling.get_src_statistic(_src)
+        if src_statistic is None:
+            src_statistic = statistics_handling.create_statistic(_src, ts)
         new_num_obj = WaitingNumber(number=num, src=_src, date=ts,
                                     date_delta=new_number_date_delta,
-                                    proc_delay=time.time() - begin_ts)
+                                    proc_delay=time.time() - begin_ts,
+                                    statistic=src_statistic)
         new_num_obj.save()
 
         if not new_batch:
@@ -137,7 +138,7 @@ def write(request):
 
         if new_number_date_delta < (opening_time['end']-opening_time['begin'])*60:
             # Update Stats if num is not first of the day, e.g. date_delta < openings
-            _update_stats(_src, new_number_date_delta, new_batch, ts)
+            statistics_handling.update_statistic(_src, new_number_date_delta, new_batch, ts)
 
         # update clients. -1 means no change. Use API for initial values
         payload = {'action': 'number',
@@ -158,47 +159,21 @@ def write(request):
     num_batch_newest.date = ts
     num_batch_newest.save()
 
+    if request.FILES and 'raw_image' in request.FILES.keys():
+        _save_image(request, src)
+
     return HttpResponse(status=201)
 
 
-def _update_stats(_src, dd, new_batch, ts):
-    try:
-        stat_ = StatisticalData.objects.get(src=_src)
-        stat_.avg_sum += dd
-        stat_.avg_len += 1
-        # sum/len = avg | sum=avg*len | new_avg = sum+dd/len+1
-        stat_.avg = 1.0 * stat_.avg_sum / stat_.avg_len
-        stat_.avg_whole = (stat_.avg + stat_.avg_last_two_weeks + stat_.avg_last_same_day) / 3
+def _save_image(request, src):
+    image = request.FILES.get('raw_image')
+    with open('/tmp/foo', 'w') as f:
+        f.write(str(image))
 
-        if new_batch.proc_delay > 0:
-            stat_.avg_proc_delay_sum += new_batch.proc_delay
-            stat_.avg_proc_delay_len += 1
-            stat_.avg_proc_delay_whole = 1.0 * stat_.avg_proc_delay_sum / stat_.avg_proc_delay_len
-
-        stat_.date = ts
-        stat_.save()
-    except MultipleObjectsReturned:
-        for stats_ in StatisticalData.objects.filter(src=_src):
-            stats_.delete()
-    except ObjectDoesNotExist:
-        real_data_begin = int(datetime.date(2013, 9, 1).strftime("%s"))
-        stat_ = StatisticalData(src=_src, date=ts)
-        stat_qs = WaitingNumber.objects.filter(src=_src).filter(date__gt=real_data_begin).filter(
-            date_delta__lt=60 * 60 * 3).filter(date_delta__gt=1)
-        stat_.avg_len = stat_qs.count()
-        stat_.avg_sum = stat_qs.aggregate(s=Sum('date_delta'))['s']
-        stat_.avg = 1.0 * stat_.avg_sum / stat_.avg_len
-        stat_.avg_last_two_weeks = stat_.avg
-        stat_.avg_last_same_day = stat_.avg
-        stat_.avg_whole = (stat_.avg + stat_.avg_last_two_weeks + stat_.avg_last_same_day) / 3
-
-        stat_.avg_proc_delay_sum = stat_qs.aggregate(s=Sum('proc_delay'))['s']
-        stat_.avg_proc_delay_whole = 1.0 * stat_.avg_proc_delay_sum / stat_.avg_len
-
-        stat_.save()
-
-    except Exception as e:
-        logger.exception('Exception while updating Stats: {}'.format(e))
+    fs = FileSystemStorage(location=IMAGE_DESTINATION)
+    filename = fs.save(image.name, image)
+    with open('/tmp/foo', 'w') as f:
+        f.write("{}; {}".format(fs.path(image.name), filename))
 
 
 def _get_old_batches(src):
@@ -215,35 +190,3 @@ def _get_old_batches(src):
 
         num_batch_newest = None
     return num_batch_newest, old_num_batch
-
-
-def recompute_stats(request):
-    # Recomputes the last_two_weeks average and the last_day average
-    # Requires calls, e.g. CRON
-    real_data_begin = int(datetime.date(2013,5,1).strftime("%s"))
-
-    for stat_data in StatisticalData.objects.all():
-        # Get average over the last two weeks
-        last_two_weeks_qs = WaitingNumber.objects.filter(src=stat_data.src).filter(date__gt=real_data_begin).filter(date_delta__lt=60*60*3).filter(date_delta__gt=1).filter(date__gt=int(time.time())-(60*60*24*14))
-        last_two_weeks_len = last_two_weeks_qs.count()
-        stat_data.avg_last_two_weeks = last_two_weeks_qs.aggregate(s=Sum('date_delta'))['s'] / last_two_weeks_len if last_two_weeks_len else 0
-
-        # Get average from weekday last week (Tuesday last week)
-        now = int(datetime.date.today().strftime('%s'))
-        weekday_range = (now - (60*60*24*7), now + (24*60*60) - (60*60*24*7))
-        last_sameday_qs = WaitingNumber.objects.filter(src=stat_data.src).filter(date__gt=real_data_begin).filter(date_delta__lt=60*60*3).filter(date_delta__gt=1).filter(date__range=weekday_range)
-        last_sameday_len = last_sameday_qs.count()
-        stat_data.avg_last_same_day = last_sameday_qs.aggregate(s=Sum('date_delta'))['s'] / last_sameday_len if last_sameday_len else 0
-
-        # Weights of whole, last two weeks and last weekday are equal
-        if last_two_weeks_len and last_sameday_len:
-            stat_data.avg_whole = (stat_data.avg + stat_data.avg_last_two_weeks + stat_data.avg_last_same_day) / 3.0
-        elif last_two_weeks_len:
-            stat_data.avg_whole = (stat_data.avg + stat_data.avg_last_two_weeks) / 2.0
-        elif last_sameday_len:
-            stat_data.avg_whole = (stat_data.avg + stat_data.avg_last_same_day) / 2.0
-        else:
-            stat_data.avg_whole = stat_data.avg
-
-        stat_data.save()
-    return HttpResponse(status=200)

@@ -84,6 +84,12 @@
     env:
       MYSQL_DATABASE: "pa3_django"
       MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/mysql_root_password"
+  register: mysql_container
+
+- name: Wait for the mysql-container to be up and to have build the database
+  wait_for:
+    timeout: 15
+  when: mysql_container.changed
 
 - name: Make sure the certificates-directory exists
   file:
@@ -101,6 +107,7 @@
         - "80:80"
     volumes:
       - "{{ frontend_directory }}/letsencrypt:/etc/letsencrypt:rw"
+
 
 - name: Start frontend container
   docker_container:

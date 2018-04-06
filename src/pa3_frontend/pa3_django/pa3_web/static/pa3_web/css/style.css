@@ -21,11 +21,11 @@ h2 {
 a img { border:0; }
 
 .framehead {text-align:center;}
-.fr_frame {
+#fr_frame {
 	float:left;
 	width: 49%;
 }
-.pa_frame {
+#pa_frame {
 	width: 49%;
 	float:right;
 	border-left:1px solid #ccc;

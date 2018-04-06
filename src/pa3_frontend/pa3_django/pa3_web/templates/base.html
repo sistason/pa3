@@ -4,7 +4,11 @@
 	<head>
 	<title>{% block title %}{% endblock %}</title>
 	<link rel="stylesheet" type="text/css" href="{% static "pa3_web/css/style.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "pa3_web/css/query.qtip.min.css" %}">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <script src="{% static "pa3_web/js/jquery-3.2.1.min.js" %}"></script>
+    <script src="{% static "pa3_web/js/jquery.qtip.min.js" %}"></script>
 	{% block head %}
 	{% endblock %}
 	</head>

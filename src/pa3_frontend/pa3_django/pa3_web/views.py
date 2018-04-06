@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import datetime, os, re
-import copy	#for the usual cases of deepcopy...
+import datetime, os
+import copy
 import _md5
 import json
 
@@ -22,55 +22,29 @@ logger = logging.getLogger('web')
 logger_req = logging.getLogger('django.request')
 
 
-def index(request, src=None, subscribeform=None):
-    data = []
-    now_ts = int(datetime.datetime.now().strftime('%s'))
-    dict_ = {'data': data, 'PA_frame': None, 'FR_frame': None, 'subscribeforms': []}
+def index(request, src=None):
+    dict_ = dict()
+    dict_['data'] = []
 
-    dict_['null'] = datetime.datetime.fromtimestamp(0)
-
-    if src:
-        if src in USER_TO_NAMES.keys():
-            srces = [src]
-            if src == '13':
-                dict_['dbg'] = True
-        else:
-            for paT, pas in USER_TO_NAMES.items():
-                if re.search(src, ' '.join(pas)):
-                    srces = [paT]
-                    break
-            else:
-                srces = ["pa_02", "pa_10", "pa_23"]
-                src = None
-    else:
-        srces = ["pa_02", "pa_10", "pa_23"]
-
-    for k in srces:
+    sources = [src] if src in USER_TO_NAMES.keys() else USER_TO_NAMES.keys()
+    for k in sources:
         try:
             newest = NewestNumberBatch.objects.get(src=k)
-            num = newest.newest  # get newest WaitingNumberBatch via newest-table
         except ObjectDoesNotExist:
-            try:
-                newest = num = WaitingNumberBatch.objects.filter(src=k).latest('date')
-            except ObjectDoesNotExist:
-                logging.warning('Warning! Database for the Display above Room {} is empty!'.format(k))
-                continue
-        except MultipleObjectsReturned:
-            newest = num = WaitingNumberBatch.objects.filter(src=k).latest('date')
+            logging.warning('Warning! Database for the Display above Room {} is empty!'.format(k))
+            continue
 
-        numbers = num.numbers.all()
-        updated = newest.date if now_ts - newest.date > 10 else 0
-        nums = {'prev': updated, 'src': num.src, 'numbers': [], 'src_nr': num.src[3:]}
-        for i in numbers:
-            date_long = i.date if now_ts - i.date < 60 * 30 else 0
-            nums['numbers'].append({'pa': i.src, 'nr': i.number, 'prev': date_long})
-        nums['numbers'].sort(key=lambda a: int(re.search(r'(\d+)/?', a['pa']).group(1)))
+        number_batch = newest.newest
+        nums_serialized = number_batch.serialize()
+        nums_serialized['newest_date'] = newest.date
+        nums_serialized['src_verbose'] = USER_TO_NAMES.get(number_batch.src, {}).get('placement')
 
-        data.append(nums)
+        dict_['data'].append(nums_serialized)
 
     if not src:
-        dict_ = news_handling.update_news(dict_)
+        dict_['news'] = news_handling.update_news()
         dict_['openings'] = OPENINGS
+        dict_['subscribeforms'] = []
 
     # for cli_handler in ClientHandler.objects.filter(active=True):
     #     dict_['subscribeforms'].append(SubscribeForm(
@@ -198,49 +172,18 @@ def api2(request, paT=None, ops=None, pa=None):
     return resp
 
 
-def api(request, paT=None, ops=None, pa=None):
-    src = [paT] if paT else USER_TO_NAMES.keys()
-    dict = {'entries': [], 'errors': [], 'openings': OPENINGS}
-    try:
-        if ops and pa:
-            if pa and pa.isdigit() and int(pa) < len(OPENINGS):
-                dict['openings'] = OPENINGS[int(pa)]
-            elif len(pa) > 3:
-                translate_dict = {'mo': 0, 'di': 1, 'mi': 2, 'do': 3, 'fr': 4, 'tu': 1, 'we': 2, 'th': 3}
-                dict['openings'] = OPENINGS[translate_dict[pa[:2].lower()]]
-    except:
-        dict['errors'].append('Dayformat for openings not understood')
-
-    if ops:
-        return HttpResponse(json.dumps(dict), content_type='application/json; charset=utf8')
+def api(request, pa=None):
+    src = [pa] if pa else USER_TO_NAMES.keys()
+    result = {'entries': [], 'errors': [], 'openings': OPENINGS}
 
     for s in src:
         try:
-            newest = NewestNumberBatch.objects.get(src=s)  # get newest WaitingNumberBatch via newest-table
+            newest = NewestNumberBatch.objects.get(src=s)
+            result['entries'].append(newest.newest.serialize())
         except (MultipleObjectsReturned, ObjectDoesNotExist):
-            dict['errors'].append("Table '%s' not found!" % s)
-            continue
-        num = newest.newest
-        nums = num.numbers.all()
+            result['errors'].append("Pruefungsamt '{}' not found!".format(s))
 
-        nums = nums.filter(src='H ' + pa) if pa else nums
-        if not nums:
-            dict['errors'].append("Pruefungsamt '%s' not found!" % pa)
-            continue
-        current = {'date': newest.date, 'src': s}
-        n = []
-        for i in nums:
-            try:
-                avg = StatisticalData.objects.get(src=i.src).avg_whole
-            except (MultipleObjectsReturned, ObjectDoesNotExist):
-                dict['errors'].append("Statistical Data for {0} not availible!".format(i.src))
-                avg = 0
-            n.append({'src': i.src.split(' ')[1], 'date': i.date, 'num': i.number, 'avg': avg})
-        current['numbers'] = n
-
-        dict['entries'].append(current)
-
-    return HttpResponse(json.dumps(dict), content_type='application/json; charset=utf8')
+    return HttpResponse(json.dumps(result), content_type='application/json; charset=utf8')
 
 
 def check_notify(request):

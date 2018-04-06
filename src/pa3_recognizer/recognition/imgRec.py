@@ -4,6 +4,7 @@ import logging
 import requests
 import json
 import os
+import re
 import time
 import numpy as np
 import cv2
@@ -68,14 +69,15 @@ class ImageRecognitor:
             fails+=1
 
         if ret:
+            print(ret)
             entries = (ret.json())['entries']
             entry = entries[0] if entries else {}
             numbers = entry.get('numbers', [])
-            if len(numbers) != self.NUMBERS:
-                self.history = [list(range(10))]
-            else:
-                numbers.sort(key=lambda f:int(f['src'].split('/')[0]))
+            if len(numbers) == self.NUMBERS:
+                numbers.sort(key=lambda f:int(re.findall(r'\d+', f['src'])[-1]))
                 self.history = [[int(num['num']) for j in range(10)] for num in numbers]
+            else:
+                self.history = [list(range(10))]
             logging.info('Initial Numbers: {0}'.format(str([num['num'] for num in numbers])))
         else:
             logging.exception('Loading initial numbers failed, initiallizing with zeros')
@@ -187,17 +189,14 @@ class ImageRecognitor:
         current_numbers_int = [i[0] for i in current_numbers]
 
         if -1 in current_numbers_int:
-            self.flag_upload_picture=True
+            return current_numbers_int, picture
         elif current_numbers_int == self.last_numbers:
             logging.info('same number')
+            return current_numbers_int, None
         else:
             self.last_numbers = current_numbers_int
-            self.flag_upload_picture=True
             logging.info("new number")
-
-        if current_numbers_int.count(-1) >= self.NUMBERS:
-            return "", picture
-        return current_numbers_int, picture
+            return current_numbers_int, picture
 
     @staticmethod
     def threshold_image(img):
@@ -324,14 +323,14 @@ class ImageRecognitor:
     def upload(self, picture, numbers, processing_begin):
         data = {'user': self.USER, 'password': self.PASS, 'ts': int(time.time()),
                 'numbers': numbers, 'begin': int(processing_begin)}
+        files = {}
 
-        if self.flag_upload_picture:
-            self.flag_upload_picture = False
+        if picture:
             _, img_encoded = cv2.imencode('.jpg', picture)
-            data['raw_image'] = img_encoded.tostring()
+            files = {'raw_image': ('{}.jpeg'.format(self.USER), img_encoded.tostring(), 'image/jpeg', {'Expires': '0'})}
 
         try:
-            requests.post("https://{}/write".format(self.URL), data=data, verify=False)
+            requests.post("https://{}/write".format(self.URL), data=data, files=files, verify=False)
         except Exception as e:
             logging.exception("Failed to submit request: {0}".format(e))
 

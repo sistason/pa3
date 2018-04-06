@@ -1,0 +1,8 @@
+# /etc/crontab: system-wide crontab
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user	command
+01 00	* * *	root    wget --no-check-certificate -q -O/dev/null https://localhost/check_news
+01 00	* * *	root    wget --no-check-certificate -q -O/dev/null https://localhost/recompute_stats
+#

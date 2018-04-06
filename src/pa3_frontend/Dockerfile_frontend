@@ -2,6 +2,7 @@ FROM python:3.4
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 apache2-utils libapache2-mod-wsgi-py3 vim
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y cron vim
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales gettext
 RUN sed -i -e 's/# de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -11,6 +12,7 @@ ENV LANG de_DE.UTF-8
 # Copy secrets manually (not a swarm, no service-secrets available)
 COPY secrets /run/secrets
 RUN chown www-data:www-data /run/secrets/*
+RUN chown www-data:www-data /dev/shm
 
 COPY pa3_frontend/requirements.txt /root
 RUN pip3 install -r /root/requirements.txt
@@ -20,10 +22,10 @@ RUN mkdir -p /etc/apache2/ssl
 RUN a2enmod ssl
 EXPOSE 443
 
+COPY pa3_frontend/crontab /etc/crontab
 RUN touch /var/log/django_debug.log; chmod 777 /var/log/django_debug.log
-COPY pa3_frontend/pa3_django /srv/pa3_django
+# TODO in production COPY pa3_frontend/pa3_django /srv/pa3_django
 
 COPY pa3_frontend/entrypoint.sh /srv/pa3_entrypoint.sh
 WORKDIR /srv/pa3_django
 ENTRYPOINT ["/bin/bash", "/srv/pa3_entrypoint.sh"]
-# CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
