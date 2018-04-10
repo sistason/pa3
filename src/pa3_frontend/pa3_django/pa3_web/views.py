@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import datetime, os
+import os
 import copy
 import _md5
 import json
 
+from django.utils import timezone
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.http import HttpResponse
+from django.utils.translation import ugettext as _
 
 import logging
 
 from pa3_web.forms import SubscribeForm, BlacklistForm
+
 from pa3.models import WaitingNumberBatch, NewestNumberBatch, StatisticalData
 from pa3.settings import USER_TO_NAMES, OPENINGS, DATABASES, BASE_DIR
 
@@ -22,24 +25,26 @@ logger = logging.getLogger('web')
 logger_req = logging.getLogger('django.request')
 
 
-def index(request, src=None):
-    dict_ = dict()
-    dict_['data'] = []
+def get_current_numbers_request(request):
+    return HttpResponse(json.dumps(get_current_numbers()), content_type='application/json; charset=utf8')
 
+
+def get_current_numbers(src=None):
     sources = [src] if src in USER_TO_NAMES.keys() else USER_TO_NAMES.keys()
+    data = []
     for k in sources:
         try:
             newest = NewestNumberBatch.objects.get(src=k)
+            data.append(newest.serialize(verbose=True))
         except ObjectDoesNotExist:
             logging.warning('Warning! Database for the Display above Room {} is empty!'.format(k))
-            continue
 
-        number_batch = newest.newest
-        nums_serialized = number_batch.serialize()
-        nums_serialized['newest_date'] = newest.date
-        nums_serialized['src_verbose'] = USER_TO_NAMES.get(number_batch.src, {}).get('placement')
+    return data
 
-        dict_['data'].append(nums_serialized)
+
+def index(request, src=None):
+    dict_ = dict()
+    dict_['data'] = get_current_numbers(src)
 
     if not src:
         dict_['news'] = news_handling.update_news()
@@ -71,7 +76,7 @@ def update_dump(request):
 
     # Create new dump
     database = DATABASES['default']
-    now = datetime.date.today().strftime('%s')
+    now = timezone.now().strftime('%s')
     dump_location = os.path.join(stats_root, 'dump_{0}.gz'.format(now))
 
     cmdline = 'mysqldump --user={0} --password={1} {2} web_waitingnumber | gzip > {3}'
@@ -130,9 +135,9 @@ def api2(request, paT=None, ops=None, pa=None):
             "openingHours":
                 [{'opens': ':'.join([str(op['begin'])[:-2], str(op['begin'])[-2:]]),
                   'closes': ':'.join([str(op['end'])[:-2], str(op['end'])[-2:]]),
-                  'validFrom': datetime.datetime(1970, 1, 1).ctime(),
-                  'validThrough': datetime.datetime(2030, 1, 1).ctime(),
-                  'dayOfWeek': datetime.datetime(1970, 1, 4 + op['weekday']).strftime('%A')}
+                  'validFrom': timezone.datetime(1970, 1, 1).ctime(),
+                  'validThrough': timezone.datetime(2030, 1, 1).ctime(),
+                  'dayOfWeek': timezone.datetime(1970, 1, 4 + op['weekday']).strftime('%A')}
                  for op in OPENINGS if op.has_key('begin')],
             "geo": {
                 "type": "GeoShape",
@@ -156,8 +161,8 @@ def api2(request, paT=None, ops=None, pa=None):
             ticket = {'type': "Ticket",
                       'uid': _md5.md5(str(src_counter.pk)).hexdigest(),
                       'currentTicketNumber': src_counter.number,
-                      'approxwaittime': (datetime.datetime.now() + datetime.timedelta(0, int(avg))).ctime(),
-                      'date': datetime.datetime.fromtimestamp(src_counter.date).ctime(),
+                      'approxwaittime': (timezone.now() + timezone.timedelta(0, int(avg))).ctime(),
+                      'date': src_counter.date.ctime(),
                       'room': src_counter.src,
                       'servicetype': {"name": "Prüfungsamt"},
                       'counter': src_counter.pk,
@@ -193,7 +198,7 @@ def check_notify(request):
             newest = NewestNumberBatch.objects.get(src=k)
         except:
             continue
-        offline_m = (int(datetime.datetime.now().strftime('%s')) - newest.date) / 60
+        offline_m = (int(timezone.now().strftime('%s')) - newest.date) / 60
         if offline_m > 5:
             status = 'H{0} down for {1} minutes'.format(k, offline_m)
             down.append(status)

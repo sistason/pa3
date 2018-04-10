@@ -1,14 +1,15 @@
-import time, datetime
+import time, pytz
 
 from django.http import HttpResponse
 
 from django.core.files.storage import FileSystemStorage
 from django.utils.translation import ugettext
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 
 from pa3_web.forms import SubscribeForm
 from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch, StatisticalData
-from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, IMAGE_DESTINATION
+from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, IMAGE_DESTINATION, TIME_ZONE
 
 from pa3_web.views import index
 from pa3 import statistics_handling
@@ -89,7 +90,7 @@ def write(request):
         request_ip = request.META.get('REMOTE_ADDR', '')
 
     # get todays opening times for validation
-    date_ = datetime.datetime.fromtimestamp(ts)
+    date_ = timezone.datetime.fromtimestamp(ts, tz=pytz.timezone(TIME_ZONE))
     for i_ in OPENINGS:
         if date_.isoweekday() == i_['weekday']:
             opening_time = i_
@@ -97,10 +98,6 @@ def write(request):
     else:
         opening_time = None
 
-#    if not opening_time or 'begin' not in opening_time or \
-#        opening_time['begin'] > int(date_.strftime('%H%M')) or \
-#        opening_time['end'] < int(date_.strftime('%H%M'))-60:    #60min buffer
-#
     num_batch_newest, old_num_batch = _get_old_batches(src)
     old_numbers = list(old_num_batch.numbers.all()) if old_num_batch else []
     new_batch = None
@@ -111,16 +108,20 @@ def write(request):
             old_number_ = [i for i in old_numbers if i.src == _src]
             if old_number_:
                 old_num_obj = old_number_[0]
-                if old_num_obj.number == num:
+                if old_num_obj.number == num or num == -1:
                     # if number stays or comes outside of the opening times, just update
                     continue
+                #    if not opening_time or 'begin' not in opening_time or \
+                #        opening_time['begin'] > int(date_.strftime('%H%M')) or \
+                #        opening_time['end'] < int(date_.strftime('%H%M'))-60:    #60min buffer
+                #       continue
 
         # compute delta, if not first DB-Entry
-        new_number_date_delta = ts - old_num_obj.date if old_num_obj else -1
+        new_number_date_delta = (date_ - old_num_obj.date).seconds if old_num_obj else -1
         src_statistic = statistics_handling.get_src_statistic(_src)
         if src_statistic is None:
-            src_statistic = statistics_handling.create_statistic(_src, ts)
-        new_num_obj = WaitingNumber(number=num, src=_src, date=ts,
+            src_statistic = statistics_handling.create_statistic(_src, date_)
+        new_num_obj = WaitingNumber(number=num, src=_src, date=date_,
                                     date_delta=new_number_date_delta,
                                     proc_delay=time.time() - begin_ts,
                                     statistic=src_statistic)
@@ -128,8 +129,8 @@ def write(request):
 
         if not new_batch:
             # proc_delay will be set after EVERYTHING else
-            new_batch = WaitingNumberBatch(src=src, src_ip=request_ip, date=ts, proc_delay=None,
-                                           date_delta=ts-old_num_batch.date if old_num_batch else -1)
+            new_batch = WaitingNumberBatch(src=src, src_ip=request_ip, date=date_, proc_delay=None,
+                                           date_delta=(date_-old_num_batch.date).seconds if old_num_batch else -1)
             new_batch.save()
             [new_batch.numbers.add(i) for i in old_numbers]
 
@@ -138,7 +139,7 @@ def write(request):
 
         if new_number_date_delta < (opening_time['end']-opening_time['begin'])*60:
             # Update Stats if num is not first of the day, e.g. date_delta < openings
-            statistics_handling.update_statistic(_src, new_number_date_delta, new_batch, ts)
+            statistics_handling.update_statistic(_src, new_number_date_delta, new_batch, date_)
 
         # update clients. -1 means no change. Use API for initial values
         payload = {'action': 'number',
@@ -156,7 +157,7 @@ def write(request):
         # replace NewestNumberBatch
         num_batch_newest.newest = new_batch
 
-    num_batch_newest.date = ts
+    num_batch_newest.date = date_
     num_batch_newest.save()
 
     if request.FILES and 'raw_image' in request.FILES.keys():

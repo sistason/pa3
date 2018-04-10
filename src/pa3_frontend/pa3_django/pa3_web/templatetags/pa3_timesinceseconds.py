@@ -1,10 +1,12 @@
 from django import template
-from django.utils.timezone import is_aware, utc
+from django.utils import timezone
 from django.utils.translation import ungettext, ugettext
 
-import datetime
+import datetime, pytz, logging
+from pa3.settings import TIME_ZONE
 
 register = template.Library()
+logger = logging.getLogger('web')
 
 
 @register.filter
@@ -26,30 +28,31 @@ def timesinceseconds(d, now=None, reversed=False):
     chunks = (
       (60 * 60 * 24 * 365, lambda n: ungettext('year', 'years', n)),
       (60 * 60 * 24 * 30, lambda n: ungettext('month', 'months', n)),
-      (60 * 60 * 24 * 7, lambda n : ungettext('week', 'weeks', n)),
-      (60 * 60 * 24, lambda n : ungettext('day', 'days', n)),
+      (60 * 60 * 24 * 7, lambda n: ungettext('week', 'weeks', n)),
+      (60 * 60 * 24, lambda n: ungettext('day', 'days', n)),
       (60 * 60, lambda n: ungettext('hour', 'hours', n)),
       (60, lambda n: ungettext('minute', 'minutes', n)),
       (1, lambda n: ungettext('second', 'seconds', n))
     )
+
     # Convert input dates and timestamps to datetimes
     if not isinstance(d, datetime.datetime):
         if isinstance(d, datetime.date):
-            d = datetime.datetime(d.year, d.month, d.day)
+            d = timezone.datetime(d.year, d.month, d.day)
         try:
-            d = datetime.datetime.fromtimestamp(float(d))
+            d = timezone.datetime.fromtimestamp(float(d), tz=pytz.timezone(TIME_ZONE))
         except:
             return ''
     if now and not isinstance(now, datetime.datetime):
         if isinstance(d, datetime.date):
-            now = datetime.datetime(now.year, now.month, now.day)
+            now = timezone.datetime(now.year, now.month, now.day)
         try:
-            now = datetime.datetime.fromtimestamp(float(now))
+            now = timezone.datetime.fromtimestamp(float(now), tz=pytz.timezone(TIME_ZONE))
         except ValueError:
             return ''
 
     if not now:
-        now = datetime.datetime.now(utc if is_aware(d) else None)
+        now = timezone.now()
 
     delta = (d - now) if reversed else (now - d)
     # ignore microseconds
@@ -57,6 +60,7 @@ def timesinceseconds(d, now=None, reversed=False):
     if since <= 0:
         # d is in the future compared to now, stop processing.
         return u'0 ' + ugettext('seconds')
+    i, count, seconds, name = 0, -1, 0, lambda f: f
     for i, (seconds, name) in enumerate(chunks):
         count = since // seconds
         if count != 0:

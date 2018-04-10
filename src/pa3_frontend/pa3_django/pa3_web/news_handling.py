@@ -1,11 +1,12 @@
 import logging
-logger = logging.getLogger(__name__)
 import requests, re, bs4
 
 from django.utils import timezone
 from django.http import HttpResponse
 
 from pa3_web.models import News
+
+logger = logging.getLogger(__name__)
 
 
 def update_news():

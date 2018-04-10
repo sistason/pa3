@@ -6,7 +6,20 @@
 {% load pa3_secondssince %}
 
 {% block title %}{% trans "Examination Office Project" %}{% endblock %}
-{% block head %}
+{% block additional_scripts %}
+    <script src="{% static "pa3_web/js/jquery-3.2.1.min.js" %}"></script>
+    <script src="{% static "pa3_web/js/jquery.qtip.min.js" %}"></script>
+    <script src="{% static "pa3_web/js/number_updates.js" %}"></script>
+
+    <script type="text/javascript">
+<!--
+	$(document).ready(function()
+	{
+		current_numbers = {{ data|safe }};
+        setInterval(update_numbers, 5000);
+	});
+//-->
+</script>
 {% endblock %}
 
 {% block content %}
@@ -17,32 +30,23 @@
 	<h1>{% trans "The latest numbers of the examination offices" %}</h1>
 	<p class="current-time">{% now "D, j. F Y H:i:s" %}</p>
 
-	{% for pa in data %}
-		{% for number in pa.numbers %}
-			<div class="number-box">
-				<span class="location">
-                    {% trans "Table at" %} <a name={{pa.src}} href="/{{pa.src}}">{{pa.src_verbose}}</a>
-                    {% if pa.newest_date|secondssince > 10 %}
-                        <br />
-                        <span style=color:red>
-                            {% blocktrans with pa.newest_date|timesinceseconds as updated %}
-                                Updated {{ updated }} ago
-                            {% endblocktrans %}
-                        </span>
-                    {% endif %}
-				</span>
-				<span class="room">{{number.src}}</span>
-				<span class="number">{{number.num}}</span>
-				    {% if number.date|secondssince < 1800 %}
-                        <span class="updated">
-                        {% blocktrans %}
-                            called {{ number.date|timesincesecondsonly }} before
-                        {% endblocktrans %}
-                        </span>
-                    {% endif %}
-                <hr ><img class="picture" src="/current_images/{{pa.src}}.jpeg" width="100" />
-			</div>
-		{% endfor %}
+	{% for pa_newest in data %}
+        {% with pa_newest.newest as pa %}
+            {% for number in pa.numbers %}
+                <div class="number-box number-box-{{ pa.src }}">
+                    <span class="location">
+                        {% trans "Table at" %} <a name={{pa.src}} href="/{{pa.src}}">{{pa.placement}}</a>
+                        <div class="updated">
+                            {{ pa_newest.updated }}
+                        </div>
+                    </span>
+                    <span class="room">{{number.src}}</span>
+                    <span class="number number-{{ number.src }}">{{ number.num }}</span>
+                    <span class="called called-{{ number.src }}">{{ number.called }}</span>
+                    <hr ><img class="picture picture-{{ number.src }}" src="/current_images/{{pa.src}}.jpeg" width="100" />
+                </div>
+            {% endfor %}
+        {% endwith %}
 	{% endfor %}
 </div>
 

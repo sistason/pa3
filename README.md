@@ -16,8 +16,7 @@ The recognizer is located on a device with a camera or with access to the images
 
 The recognition is opencv-python software specifically designed to recognize the seven-segment displays at TU-Berlin, although it can easily be exchanged or customized.
 
-The recogniition POSTs its results via https to the frontend.   
-TODO: py2 to py3
+The recogniition POSTs its results via https to the frontend.
 
 ### Frontend
 The Frontend is located on a device with a public IP/DNS for the user interaction.
@@ -45,3 +44,10 @@ Please note this project was neither started nor converted to be plug&play.
 It needs to be adapted for your use case, so understanding the operation is necessary 
 for installation and configuration.
 Please see the READMEs in the respective source directories. 
+
+## TODOs:
+- Readme.md for all src/
+- number-ajax.js
+- in_browser_subscription.js
+- rewrite/refactor number_recognition to py3
+- subscription via Mail/sms

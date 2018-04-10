@@ -9,8 +9,10 @@ urlpatterns = [
     path('check_notify', views.check_notify),
     path('update_dump', views.update_dump),
 
+    path('current_numbers', views.get_current_numbers_request),
     re_path(r'^api(?:/(?P<pa>.+)/?)?$', views.api),
     re_path(r'^api2/(?:(?P<paT>\d+)|(?P<ops>ops))?/?(?P<pa>.+?)?$', views.api2),
+
 ]
 
 urlpatterns += [

@@ -1,8 +1,9 @@
 from django import template
-from django.utils.timezone import is_aware, utc
+from django.utils import timezone
 from django.utils.translation import ungettext, ugettext
 
-import datetime
+import datetime, pytz
+from pa3.settings import TIME_ZONE
 
 register = template.Library()
 
@@ -13,21 +14,21 @@ def secondssince(d, now=None, reversed=False):
     # Convert input dates and timestamps to datetimes
     if not isinstance(d, datetime.datetime):
         if isinstance(d, datetime.date):
-            d = datetime.datetime(d.year, d.month, d.day)
+            d = timezone.datetime(d.year, d.month, d.day)
         try:
-            d = datetime.datetime.fromtimestamp(float(d))
-        except:
+            d = timezone.datetime.fromtimestamp(float(d), tz=pytz.timezone(TIME_ZONE))
+        except Exception:
             return ''
     if now and not isinstance(now, datetime.datetime):
         if isinstance(d, datetime.date):
-            now = datetime.datetime(now.year, now.month, now.day)
+            now = timezone.datetime(now.year, now.month, now.day)
         try:
-            now = datetime.datetime.fromtimestamp(float(now))
+            now = timezone.datetime.fromtimestamp(float(now), tz=pytz.timezone(TIME_ZONE))
         except ValueError:
             return ''
 
     if not now:
-        now = datetime.datetime.now(utc if is_aware(d) else None)
+        now = timezone.now()
 
     delta = (d - now) if reversed else (now - d)
     # ignore microseconds
