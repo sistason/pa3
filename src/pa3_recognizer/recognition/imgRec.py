@@ -75,7 +75,7 @@ class ImageRecognitor:
             numbers = entry.get('numbers', [])
             if len(numbers) == self.NUMBERS:
                 numbers.sort(key=lambda f:int(re.findall(r'\d+', f['src'])[-1]))
-                self.history = [[int(num['num']) for j in range(10)] for num in numbers]
+                self.history = [[int(num['number']) for j in range(10)] for num in numbers]
             else:
                 self.history = [list(range(10))]
             logging.info('Initial Numbers: {0}'.format(str([num['num'] for num in numbers])))

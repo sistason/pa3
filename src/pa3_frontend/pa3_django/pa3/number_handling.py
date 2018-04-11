@@ -1,4 +1,4 @@
-import time, pytz
+import time, pytz, os
 
 from django.http import HttpResponse
 
@@ -137,7 +137,7 @@ def write(request):
         [new_batch.numbers.remove(i) for i in old_numbers if i.src == _src]
         new_batch.numbers.add(new_num_obj)
 
-        if new_number_date_delta < (opening_time['end']-opening_time['begin'])*60:
+        if new_number_date_delta < (opening_time.get('end', 0)-opening_time.get('begin', 0))*60:
             # Update Stats if num is not first of the day, e.g. date_delta < openings
             statistics_handling.update_statistic(_src, new_number_date_delta, new_batch, date_)
 
@@ -168,13 +168,13 @@ def write(request):
 
 def _save_image(request, src):
     image = request.FILES.get('raw_image')
-    with open('/tmp/foo', 'w') as f:
-        f.write(str(image))
+    extension = os.path.splitext(image.name)[-1]
+    image_name = "{}{}".format(src, extension)
 
     fs = FileSystemStorage(location=IMAGE_DESTINATION)
-    filename = fs.save(image.name, image)
-    with open('/tmp/foo', 'w') as f:
-        f.write("{}; {}".format(fs.path(image.name), filename))
+    filename = fs.save(image_name, image)
+    if fs.exists(image.name):
+        os.rename(os.path.join(IMAGE_DESTINATION, filename), os.path.join(IMAGE_DESTINATION, image_name))
 
 
 def _get_old_batches(src):

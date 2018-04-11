@@ -41,9 +41,10 @@
                         </div>
                     </span>
                     <span class="room">{{number.src}}</span>
-                    <span class="number number-{{ number.src }}">{{ number.num }}</span>
+                    <span class="number number-{{ number.src }}">{{ number.number }}</span>
                     <span class="called called-{{ number.src }}">{{ number.called }}</span>
-                    <hr ><img class="picture picture-{{ number.src }}" src="/current_images/{{pa.src}}.jpeg" width="100" />
+                    <hr >
+                    <img class="picture picture-{{ number.src }}" src="/current_images/{{pa.src}}.jpeg?" width="100" />
                 </div>
             {% endfor %}
         {% endwith %}

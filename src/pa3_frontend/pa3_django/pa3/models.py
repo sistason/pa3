@@ -57,7 +57,7 @@ class WaitingNumber(models.Model):
         return '{} | {}: {}'.format(self.number, str(self.date), self.src)
 
     def serialize(self, verbose=False):
-        serialized = {'src': self.src, 'date': self.date.strftime('%s'), 'num': self.number,
+        serialized = {'src': self.src, 'date': self.date.strftime('%s'), 'number': self.number,
                       'proc_delay': self.proc_delay, 'date_delta': self.date_delta,
                       'statistics': self.statistic.serialize()}
         if verbose:
@@ -106,5 +106,5 @@ class NewestNumberBatch(models.Model):
         if verbose:
             updated = (timezone.now() - self.date).seconds
             serialized['updated'] = "" if updated < 10 else _(
-                "updated {} ago".format(timesincesecondsonly(self.date)))
+                "Warning! Last check {} ago".format(timesincesecondsonly(self.date)))
         return serialized
