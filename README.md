@@ -47,7 +47,6 @@ Please see the READMEs in the respective source directories.
 
 ## TODOs:
 - Readme.md for all src/
-- number-ajax.js
 - in_browser_subscription.js
 - rewrite/refactor number_recognition to py3
 - subscription via Mail/sms

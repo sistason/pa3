@@ -15,8 +15,9 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Pruefungsamt variables
+# Pruefungsamt variables #
 
+# Conversion of system-variables to readable strings
 USER_TO_NAMES = {'pa_23': {'placement': 'H 23', 'displays': ['H 19', 'H 23', 'H 25']},
                  'pa_10': {'placement': 'H 10', 'displays': ['H 10']},
                  'pa_13': {'placement': 'H 13', 'displays':
@@ -28,15 +29,20 @@ USER_TO_NAMES = {'pa_23': {'placement': 'H 23', 'displays': ['H 19', 'H 23', 'H 
 with open(os.path.join('/run', "secrets", "recognizer_auth")) as f:
     RECOGNIZER_AUTH = f.read().strip()
 
+# Where to write the images the recognizers based their OCR on? (for user validation. /dev/shm is the docker ramdisk)
 IMAGE_DESTINATION = '/dev/shm/'
 
-
+# When is the office you want to recognize open? Used to discard false-positive results and for user-display
 OPENINGS = [{'weekday': 1, 'begin': 930, 'end': 1230},
             {'weekday': 2, 'begin': 1300, 'end': 1600},
             {'weekday': 3},
             {'weekday': 4, 'begin': 930, 'end': 1230},
             {'weekday': 5, 'begin': 930, 'end': 1230}
 ]
+
+# TODO: You probably want to change this here according to server_url
+ALLOWED_HOSTS = ['pa.freitagsrunde.org', 'www.pa.freitagsrunde.org', 'pruefungsamt.org', 'www.pruefungsamt.org',
+                 '172.16.0.4', 'pa3_frontend', 'pa3.sistason.de', 'www.pa3.sistason.de', 'localhost', '172.16.0.6']
 
 
 # Quick-start development settings - unsuitable for production
@@ -48,11 +54,7 @@ with open(os.path.join('/run', "secrets", "django_secret_key")) as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['pa.freitagsrunde.org', 'www.pa.freitagsrunde.org', 'pruefungsamt.org', 'www.pruefungsamt.org',
-                 '172.16.0.4', 'pa3_frontend', 'pa3.sistason.de', 'www.pa3.sistason.de', 'localhost', '172.16.0.6']
-
+DEBUG = False
 
 # Application definition
 
