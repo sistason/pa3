@@ -78,8 +78,8 @@ if __name__ == '__main__':
         image_directory_ = environ.get('IMAGE_DIRECTORY')
 
     camera_ = pd['camera']
-    if not camera_:
-        camera_ = environ.get('CAMERA')
+    if camera_ < 0:
+        camera_ = environ.get('CAMERA', -1)
 
     pa_proj = PruefungsamtProjekt(user=pd['pa_user'], client_password=client_password_,
                                   server_url=server_url_, camera=camera_, image_directory=image_directory_)

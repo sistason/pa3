@@ -325,7 +325,7 @@ class ImageRecognitor:
                 'numbers': numbers, 'begin': int(processing_begin)}
         files = {}
 
-        if picture:
+        if picture is not None and picture.any():
             _, img_encoded = cv2.imencode('.jpg', picture)
             files = {'raw_image': ('{}.jpeg'.format(self.USER), img_encoded.tostring(), 'image/jpeg', {'Expires': '0'})}
 

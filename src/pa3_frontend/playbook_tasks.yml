@@ -104,7 +104,7 @@
     networks:
       - name: "pa3_net"
     ports:
-        - "80:80"
+        - "{{ bind_ip }}:80:80"
     volumes:
       - "{{ frontend_directory }}/letsencrypt:/etc/letsencrypt:rw"
 
@@ -118,10 +118,8 @@
     networks:
       - name: "pa3_net"
     ports:
-      - "443:443"
+      - "{{ bind_ip }}:443:443"
     volume_driver: bind
     volumes:
       - "{{ frontend_directory }}/letsencrypt/archive:/etc/apache2/ssl:rw"
-      # TODO: remove in production. For coding without compiling first
-      - "/home/sistason/skriptecke/pa3/src/pa3_frontend/pa3_django:/srv/pa3_django:rw"
 
