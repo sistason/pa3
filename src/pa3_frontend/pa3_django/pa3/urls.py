@@ -1,9 +1,8 @@
 
 from django.urls import path, re_path
 
-from pa3_web import views, news_handling
-from pa3 import number_handling
-from pa3 import statistics_handling
+from pa3_web import views, news_handling, subscription_handling
+from pa3 import number_handling, statistics_handling
 
 urlpatterns = [
     path('check_notify', views.check_notify),
@@ -20,6 +19,12 @@ urlpatterns += [
     path('subscribe', number_handling.subscribe_client),
     path('recompute_stats', statistics_handling.recompute_stats),
     path('check_news', news_handling.check_news),
+]
+
+urlpatterns += [
+    path('subscribe', subscription_handling.subscribe),
+    path('get_subscriber', subscription_handling.get_subscriber),
+    path('delete_subscriber', subscription_handling.delete_subscriber),
 ]
 
 # Keep this urlpattern at the end, since it matches everything not yet matched as src

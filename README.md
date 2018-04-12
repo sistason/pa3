@@ -46,7 +46,7 @@ for installation and configuration.
 Please see the READMEs in the respective source directories. 
 
 ## TODOs:
-- Readme.md for all src/
 - in_browser_subscription.js
+- subscription via SMS?
 - rewrite/refactor number_recognition to py3
-- subscription via Mail/sms
+

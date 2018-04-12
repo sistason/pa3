@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils.translation import ugettext as _
 
 import logging
@@ -26,7 +26,7 @@ logger_req = logging.getLogger('django.request')
 
 
 def get_current_numbers_request(request):
-    return HttpResponse(json.dumps(get_current_numbers()), content_type='application/json; charset=utf8')
+    return JsonResponse(get_current_numbers())
 
 
 def get_current_numbers(src=None):

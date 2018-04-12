@@ -14,9 +14,11 @@ function update_numbers(){
 function change_update_time(batch, updated_){
     var $location = $(".number-box-"+batch.newest.src.replace(' ', '.'));
     
-    if (updated_ === undefined)
+    if (updated_ === undefined){
         // number was not in update, system is broken!
         $location.find(".updated").text("Something broke! Don't rely on this number.");
+        notify_subscriber_system_error(subscribed, batch);
+    }
     else
         $location.find(".updated").text(updated_);
 }
@@ -38,6 +40,9 @@ function update_changed(data){
                 if (new_number && new_number.number != old_number.number){
                     console.log("Batch "+new_batch.placement+" - new_number: "+
                         new_number.number + "; old: " + old_number.number);
+
+                    check_subscriber(subscribed, new_number);
+
                     $number_box.find(".number-"+number_src_encoded).text(new_number.number);
 
                     var $image = $number_box.find(".picture-"+number_src_encoded)[0];
