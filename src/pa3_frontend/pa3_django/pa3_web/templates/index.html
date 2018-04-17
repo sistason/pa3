@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load static %}
+
 {% load pa3_timesinceseconds %}
 {% load pa3_secondssince %}
 
@@ -10,15 +11,17 @@
     <script src="{% static "pa3_web/js/jquery-3.2.1.min.js" %}"></script>
     <script src="{% static "pa3_web/js/jquery.qtip.min.js" %}"></script>
     <script src="{% static "pa3_web/js/number_updates.js" %}"></script>
+    <script src="{% static "pa3_web/js/subscriptions.js" %}"></script>
 
     <script type="text/javascript">
 <!--
 	$(document).ready(function()
 	{
 		current_numbers = {{ data|safe }};
+		subscription_init();
+        subscription_form_init();
+
         setInterval(update_numbers, 5000);
-        subscription_init();
-        update_subscription_form();
 	});
 //-->
 </script>
@@ -54,17 +57,8 @@
 </div>
 
 <div class=applets>
-	{% if news %}
-		{% include "frameOpenings.html" %}<br />
-		{# {% include "frameSubscribe.html" %}<br />   #}
-	{% endif %}
-	<div class="logo">
-		<a href="http://wiki.freitagsrunde.org">
-			<img src="{%  static "pa3_web/img/frunde_logo.png" %}">
-		</a>
-	</div>
+    {% include "applets.html" %}
 </div>
-
 
 <div style=clear:both></div>
 
@@ -73,35 +67,7 @@
 	{% include "currentstatus.html" %}
 	<hr />
 
-
-	<div id="fr_frame">
-    {% if news.fr_error %}
-        <p class="framehead">{% trans news.fr_error|safe %}</p>
-    {% else %}
-
-        <p class="framehead">
-            <u>{% trans "News from the Freitagsrunde" %}</u><br />
-            {{ news.fr_news.title }}
-        </p>
-        <p class="framecontent">
-		    {{ news.fr_news.content|safe }}
-        </p>
-    {% endif %}
-	</div>
-	<div id="pa_frame">
-    {% if news.pa_error %}
-		<p class="framehead">{% trans news.pa_error|safe %}</p>
-    {% else %}
-        <p class="framehead">
-            <u>{% trans "News from the examination office" %}</u><br />
-            {{ news.pa_news.title }}
-        </p>
-        <p class="framecontent">
-		    {{ news.pa_news.content|safe }}
-        </p>
-    {% endif %}
-	</div>
-	<div style="clear:both;"></div>
+    {% include "news.html" %}
 
 	{% include "disclaimer.html" %}
 {% else %}

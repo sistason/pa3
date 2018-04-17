@@ -1,7 +1,8 @@
 {
    "pa_02": {
         "numbers" : 1,
-        "ranges" : [[1, 300]]
+        "ranges" : [[1, 300]],
+        "rotate": 180
     },
     "pa_10": {
         "numbers" : 1,

@@ -1,34 +1,74 @@
 var subscribed;
 
-function update_subscription_form(){
-    //TODO: form-select mit src füllen
+function subscription_form_init(){
+    var $select = $(".subscription #subscription-src");
+
+    current_numbers.forEach(function (newest_batch) {
+        newest_batch.newest.numbers.forEach(function(number_obj){
+            console.log(number_obj.src);
+            $select.append($('<option>', {
+                value: number_obj.src,
+                text : number_obj.src
+            }));
+        });
+    });
+
+    $(".subscription-form").submit(subscribe);
 }
 
-function subscribe(){
-    //TODO: form
-    //TODO: get_from_form
+$(".subscription input[name=protocols]:radio").on("change", subscription_form_protocol_change);
+function subscription_form_protocol_change(){
+    $(".subscription #subscription-identifier").prop("hidden",
+        $(".subscription input[name=protocols]:checked").prop("value") === "Browser");
+}
 
-    var buffer;
-    var number;
-    var src;
+function subscribe(event){
+    event.preventDefault();
+    var $form = $(".subscribe-box .subscription-form");
+    var $response = $(".subscribe-box #subscription-response");
+    $response.text();
+
+    var buffer = $form.find("#subscription-buffer").prop('value');
+    if (!$.isNumeric(buffer))
+        buffer = "5";
+    var number = $form.find("#subscription-number").prop('value');
+    if (!$.isNumeric(number)) {
+        $response.text("You need to supply a valid number!");
+        $response.prop("class", "error");
+        return;
+    }
+    var src = $form.find("#subscription-src option:selected").prop('value');
+    if (!src){
+        $response.text("No office selected!");
+        $response.prop("class", "error");
+        return;
+    }
 
     $.ajax({
-        url: "/subscribe",
-        type: "POST",
+        url: $form.prop('action'),
+        type: "GET", //after some problems with csrf...
         data: {
             buffer:buffer,
             number:number,
-            src: src
+            src: src,
+            protocol: 'browser'
+            // csrfmiddlewaretoken: $form.find('input[name=csrfmiddlewaretoken]').prop('value')
         },
         success: function(data){
-            subscribed = data.subscriber;
-            check_if_subscriber_is_due(data.subscriber);
+            var message_alert = get_locale() === 'de' ? 'Erfolgreich abonniert! ' : 'Successfully subscribed!';
+            alert(message_alert);
+            $response.text(get_locale() === 'de' ? 'Erfolgreich abonniert, wenn du das Popup gesehen hast!' :
+                'Successfully subscribed, if you saw the popup!');
+            $response.prop("class", "success");
+            subscribed = data.subscription;
+            check_if_subscriber_is_due(subscribed);
         },
         error: function(a,b,c){
             subscribed = undefined;
-            var message_en = "Could not reach the server, subscription not possible at the moment!";
-            var message_de = "Keine Verbindung zum Server möglich, Benachtigungen sind im Moment nicht möglich!";
-            alert_and_delete(undefined, {de: message_de, en: message_en})
+            $response.text(get_locale() === 'de' ?
+                'Keine Verbindung zum Server m&ouml;glich, Benachtigungen sind im Moment nicht möglich!' :
+                'Could not reach the server, subscription not possible at the moment!');
+            $response.prop("class", "error");
         }
     });
 }
@@ -56,7 +96,8 @@ function check_if_subscriber_is_due(subscriber){
 }
 
 function check_number_due(subscriber, number){
-    return (number - subscriber.buffer >= subscriber.number)
+    var difference = subscriber.number - number;
+    return (-50 <= difference && difference <= subscriber.buffer)
 }
 
 function handle_subscriber(subscriber, number_obj){
@@ -74,12 +115,19 @@ function notify_subscriber(subscriber, number){
     alert_and_delete(subscriber, {de: message_de, en: message_en});
 }
 
+function get_locale() {
+    var lang = navigator.language.split('-')[0];
+    if (lang === 'de')
+        return 'de';
+    return 'en';
+}
+
 function alert_and_delete(subscriber, messages){
-    //TODO: get locale
-    var message = messages.de;
+    var message = messages[get_locale()];
 
     alert(message);
     if (subscriber)
+        console.log(subscriber);
         subscribed = undefined;
         delete_subscriber(subscriber);
 }

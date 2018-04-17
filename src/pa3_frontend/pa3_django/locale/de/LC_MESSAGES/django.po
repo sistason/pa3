@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-11 11:45+0200\n"
+"POT-Creation-Date: 2018-04-17 20:00+0200\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 
 #: pa3/models.py:65
@@ -15,7 +15,7 @@ msgid "Warning! Last check {} ago"
 msgstr "Achtung! Daten {} alt!"
 
 #: pa3/templates/404.html:6 pa3_web/templates/abuse.html:4
-#: pa3_web/templates/index.html:8
+#: pa3_web/templates/index.html:9
 msgid "Examination Office Project"
 msgstr "Prüfungsamtprojekt"
 
@@ -33,22 +33,6 @@ msgstr ""
 "Vielleicht klappt es ja, wenn Du nochmal <a href=/>zurück zur Startseite</a> "
 "gehst..."
 
-#: pa3_web/forms.py:35
-msgid "Your mobile number"
-msgstr "Deine Handynummer"
-
-#: pa3_web/forms.py:38
-msgid "Your mail address"
-msgstr "Deine Mailadresse"
-
-#: pa3_web/forms.py:41
-msgid "Your XMPP-account"
-msgstr "Dein XMPP-Account"
-
-#: pa3_web/forms.py:50
-msgid "Your drawn number"
-msgstr "Deine gezogene Nummer"
-
 #: pa3_web/templates/abuse.html:4
 msgid "Abuse"
 msgstr "Missbrauch"
@@ -65,7 +49,7 @@ msgstr "Bei einem Problem mit dem Benachrichtigungs-service"
 msgid "Blacklist your adress"
 msgstr "Blocken der Addresse"
 
-#: pa3_web/templates/abuse.html:20
+#: pa3_web/templates/abuse.html:20 pa3_web/templates/applets.html:27
 msgid "Address"
 msgstr "Adresse"
 
@@ -85,47 +69,44 @@ msgstr "In allen dringenden Faellen"
 msgid "Write an email to"
 msgstr "Schreiben Sie eine EMail an"
 
-#: pa3_web/templates/frameOpenings.html:5
+#: pa3_web/templates/applets.html:6
 msgid "Opening Hours"
 msgstr "Öffnungszeiten"
 
-#: pa3_web/templates/frameSubscribe.html:26
+#: pa3_web/templates/applets.html:20
 msgid "Subscription"
 msgstr "Benachrichtigung"
 
-#: pa3_web/templates/frameSubscribe.html:46
-msgid "Recipient"
-msgstr "Empfänger"
-
-#: pa3_web/templates/frameSubscribe.html:49
+#: pa3_web/templates/applets.html:29
 msgid "Number"
 msgstr "Nummer"
 
-#: pa3_web/templates/frameSubscribe.html:51
-msgid "Buffer"
-msgstr "Puffer"
+#: pa3_web/templates/applets.html:30
+#, fuzzy
+msgid "Notice before"
+msgstr "aufgerufen vor %(prev)s"
 
-#: pa3_web/templates/frameSubscribe.html:54
-msgid "Bureau"
+#: pa3_web/templates/applets.html:31
+msgid "Office"
 msgstr "Amt"
 
-#: pa3_web/templates/frameSubscribe.html:58
+#: pa3_web/templates/applets.html:34
 msgid "Subscribe"
 msgstr "Abonnieren"
 
-#: pa3_web/templates/index.html:30
+#: pa3_web/templates/index.html:35
 msgid "The latest numbers of the examination offices"
 msgstr "Die aktuellsten Nummern aus den Prüfungsämtern"
 
-#: pa3_web/templates/index.html:38
+#: pa3_web/templates/index.html:43
 msgid "Table at"
 msgstr "Tafel am"
 
-#: pa3_web/templates/index.html:81
+#: pa3_web/templates/news.html:9
 msgid "News from the Freitagsrunde"
 msgstr "News aus der Freitagsrunde"
 
-#: pa3_web/templates/index.html:94
+#: pa3_web/templates/news.html:23
 msgid "News from the examination office"
 msgstr "News aus dem Prüfungsamt"
 
@@ -190,6 +171,27 @@ msgstr ""
 msgid ", %(number)d %(type)s"
 msgstr ""
 
+#~ msgid "Your mobile number"
+#~ msgstr "Deine Handynummer"
+
+#~ msgid "Your mail address"
+#~ msgstr "Deine Mailadresse"
+
+#~ msgid "Your XMPP-account"
+#~ msgstr "Dein XMPP-Account"
+
+#~ msgid "Your drawn number"
+#~ msgstr "Deine gezogene Nummer"
+
+#~ msgid "Recipient"
+#~ msgstr "Empfänger"
+
+#~ msgid "Buffer"
+#~ msgstr "Puffer"
+
+#~ msgid "Bureau"
+#~ msgstr "Amt"
+
 #~ msgid "Success!"
 #~ msgstr "Erfolg!"
 
@@ -201,17 +203,17 @@ msgstr ""
 #~ msgid "<u>Average:</u> %(avg)s seconds"
 #~ msgstr "Durschnitt: %(avg)s"
 
-msgid "Monday"
-msgstr "Montag"
+#~ msgid "Monday"
+#~ msgstr "Montag"
 
-msgid "Tuesday"
-msgstr "Dienstag"
+#~ msgid "Tuesday"
+#~ msgstr "Dienstag"
 
-msgid "Wednesday"
-msgstr "Mittwoch"
+#~ msgid "Wednesday"
+#~ msgstr "Mittwoch"
 
-msgid "Thursday"
-msgstr "Donnerstag"
+#~ msgid "Thursday"
+#~ msgstr "Donnerstag"
 
-msgid "Friday"
-msgstr "Freitag"
+#~ msgid "Friday"
+#~ msgstr "Freitag"

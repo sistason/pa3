@@ -14,8 +14,6 @@ from django.utils.translation import ugettext as _
 
 import logging
 
-from pa3_web.forms import SubscribeForm, BlacklistForm
-
 from pa3.models import WaitingNumberBatch, NewestNumberBatch, StatisticalData
 from pa3.settings import USER_TO_NAMES, OPENINGS, DATABASES, BASE_DIR
 
@@ -26,7 +24,7 @@ logger_req = logging.getLogger('django.request')
 
 
 def get_current_numbers_request(request):
-    return JsonResponse(get_current_numbers())
+    return JsonResponse(get_current_numbers(), safe=False)
 
 
 def get_current_numbers(src=None):
@@ -45,22 +43,10 @@ def get_current_numbers(src=None):
 def index(request, src=None):
     dict_ = dict()
     dict_['data'] = get_current_numbers(src)
+    dict_['openings'] = OPENINGS
 
-    if not src:
+    if src is None:
         dict_['news'] = news_handling.update_news()
-        dict_['openings'] = OPENINGS
-        dict_['subscribeforms'] = []
-
-    # for cli_handler in ClientHandler.objects.filter(active=True):
-    #     dict_['subscribeforms'].append(SubscribeForm(
-    #         cli_handler.protocol))
-    # if subscribeform:
-    #     try:
-    #         [dict_['subscribeforms'].remove(i) for i in dict_['subscribeforms']
-    #          if i.protocol == subscribeform.protocol]
-    #     except:
-    #         pass
-    #     dict_['subscribeforms'].insert(0, subscribeform)
 
     return render_to_response('index.html', dict_, RequestContext(request))
 
@@ -193,14 +179,14 @@ def api(request, pa=None):
 
 def check_notify(request):
     down = []
-    for k in [2, 10, 23, 13]:
+    for k in USER_TO_NAMES.keys():
         try:
             newest = NewestNumberBatch.objects.get(src=k)
-        except:
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
             continue
-        offline_m = (int(timezone.now().strftime('%s')) - newest.date) / 60
+        offline_m = (timezone.now() - newest.date).seconds / 60
         if offline_m > 5:
-            status = 'H{0} down for {1} minutes'.format(k, offline_m)
+            status = '{0} down for {1} minutes'.format(k, int(offline_m))
             down.append(status)
             if (offline_m < 60 or not offline_m % 10) and offline_m < 600:
                 logger_req.fatal(status)

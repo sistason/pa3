@@ -41,7 +41,7 @@ function update_changed(data){
                     console.log("Batch "+new_batch.placement+" - new_number: "+
                         new_number.number + "; old: " + old_number.number);
 
-                    check_subscriber(subscribed, new_number);
+                    handle_subscriber(subscribed, new_number);
 
                     $number_box.find(".number-"+number_src_encoded).text(new_number.number);
 

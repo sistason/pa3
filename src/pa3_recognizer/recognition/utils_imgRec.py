@@ -29,7 +29,7 @@ def find_outer_edges(img, one_ratio=0.7):
 
     height, width = img.shape
     img_tmp = img.copy()   #findContours modifies source image!
-    contours, hierarchy = cv2.findContours(img_tmp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, hierarchy = cv2.findContours(img_tmp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     conts_combined = []
     [[conts_combined.extend(j) for j in i] for i in contours]
@@ -110,11 +110,12 @@ def straighten_image(img):
 
     return img
 
+
 def digit_recog(img, one_ratio=0.7):
     height, width = img.shape
     if not img.any() or not height or not width:
         return -1, 0
-    contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     conts_combined = []
     [[conts_combined.extend(j) for j in i] for i in contours]

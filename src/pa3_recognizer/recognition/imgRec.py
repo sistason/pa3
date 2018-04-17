@@ -200,16 +200,17 @@ class ImageRecognitor:
 
     @staticmethod
     def threshold_image(img):
-        img = cv2.normalize(img, alpha=0, beta=255, norm_type=cv2.cv.CV_MINMAX, dtype=cv2.cv.CV_8UC1)
-        Z = img.reshape((-1,1))
+        img_norm = img.copy()
+        cv2.normalize(img, img_norm, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        Z = img_norm.reshape((-1,1))
         Z = np.float32(Z)
 
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 50, 1.0)
-        ret, label, center = cv2.kmeans(Z, 3, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        ret, label, center = cv2.kmeans(Z, 3, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
 
         center = np.uint8(center)
         res = center[label.flatten()]
-        res2 = res.reshape(img.shape)
+        res2 = res.reshape(img_norm.shape)
         brightness_numbers = np.max(res2)
         _, res2 = cv2.threshold(res2, brightness_numbers-1,255, 0)
         logging.debug('thresholding image to {0}'.format(brightness_numbers))
@@ -288,7 +289,7 @@ class ImageRecognitor:
             picture_ = cv2.warpAffine(picture_, M, (nW, nH))
 
         if len(picture_.shape) > 2:
-            picture_ = cv2.cvtColor(picture_, cv2.cv.CV_BGR2GRAY)
+            picture_ = cv2.cvtColor(picture_, cv2.COLOR_BGR2GRAY)
 
         # Crop image accordingly if history shows many fails
         # Many is defined as 10 numbers in all histories are not recognised

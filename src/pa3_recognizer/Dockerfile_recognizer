@@ -1,15 +1,12 @@
 #FROM rickryan/rpi-jessie-opencv3.2
 FROM python:2.7
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python-requests python-opencv
-#RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python-requests
-#RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y vim
-
-RUN mkdir /root/current_images
-RUN mkdir /run/secrets/
+RUN mkdir -p /srv/pa3/current_images
+RUN mkdir -p /run/secrets/
 
 COPY recognizer_auth /run/secrets/
-COPY recognition /root/
+COPY recognition/ /srv/pa3/recognition
 
-CMD ["python", "/root/paProj.py"]
-#CMD ["/bin/bash"]
+RUN pip install -r /srv/pa3/recognition/requirements.txt
+
+CMD ["python", "/srv/pa3/recognition/paProj.py"]

@@ -7,11 +7,10 @@ from django.utils.translation import ugettext
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 
-from pa3_web.forms import SubscribeForm
-from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch, StatisticalData
+from pa3_web.models import Subscriber
+from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch
 from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, IMAGE_DESTINATION, TIME_ZONE
 
-from pa3_web.views import index
 from pa3 import statistics_handling
 
 import logging
@@ -19,36 +18,6 @@ import logging
 
 logger = logging.getLogger('web')
 logger_sub = logging.getLogger('subscribe')
-
-
-def call_clients(payload, protocol='', meta={}):
-    return []
-
-
-def subscribe_client(request):
-    logger.debug("subscribe_client")
-    if request.method == 'POST':
-        form = SubscribeForm(request.POST.get('protocol',''),request.POST)
-        if form.is_valid():
-            if not form.data['recipient']:
-                return    #browser, ergo javascript. Nothing to do here
-            payload = { 'action' : 'subscribe',
-                        'recipient' : form.data['recipient'],
-                        'number' : form.data['number'],
-                        'buf' : form.data['buf'],
-                        'src' : form.data['src'],
-                        'lang' : request.META.get('HTTP_ACCEPT_LANGUAGE','en')[:2]}
-            for (ret, output) in call_clients(payload, protocol=form.protocol, meta=request.META):
-                if not ret:
-                    form.add_form_error(output)
-                else:
-                    form.success.append(output)
-        else:
-            logger.info(str(form.errors))
-    else:
-        form = None
-
-    return index(request, subscribeform=form)
 
 
 @csrf_exempt
@@ -141,13 +110,8 @@ def write(request):
             # Update Stats if num is not first of the day, e.g. date_delta < openings
             statistics_handling.update_statistic(_src, new_number_date_delta, new_batch, date_)
 
-        # update clients. -1 means no change. Use API for initial values
-        payload = {'action': 'number',
-                   'number': str(num),
-                   'src': _src,
-                   'ts': str(ts)
-                   }
-        call_clients(payload)
+        for subscriber in Subscriber.objects.filter(src=_src, protocol='sms'):
+            subscriber.handle(num)
 
     if num_batch_newest is None:
         num_batch_newest = NewestNumberBatch(src=src, newest=old_num_batch)
