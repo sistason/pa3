@@ -1,6 +1,7 @@
 import time, pytz, os
+from base64 import b64encode
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 from django.core.files.storage import FileSystemStorage
 from django.utils.translation import ugettext
@@ -9,7 +10,8 @@ from django.utils import timezone
 
 from pa3_web.models import Subscriber
 from pa3.models import WaitingNumberBatch, WaitingNumber, NewestNumberBatch
-from pa3.settings import USER_TO_NAMES, RECOGNIZER_AUTH, OPENINGS, IMAGE_DESTINATION, TIME_ZONE
+from pa3.settings import USER_TO_NAMES, OPENINGS, IMAGE_DESTINATION, TIME_ZONE
+from pa3.settings import RECOGNIZER_AUTH, RECOGNIZER_CONFIG, RECOGNITION_TEMPLATES_PATH
 
 from pa3 import statistics_handling
 
@@ -18,6 +20,42 @@ import logging
 
 logger = logging.getLogger('web')
 logger_sub = logging.getLogger('subscribe')
+
+
+@csrf_exempt
+def get_config(request):
+    if not request.POST or 'user' not in request.POST or 'password' not in request.POST:
+        logger.info("Received an invalid config request {} from {}".format(request.POST,
+                                                                           request.META.get('HTTP_X_FORWARDED_FOR')))
+        return HttpResponse(status=401, content='POST request incomplete!\n')
+
+    user = request.POST.get('user')
+    if user not in USER_TO_NAMES.keys() or RECOGNIZER_AUTH != request.POST.get('password'):
+        logger.info("Received an unauthorized config request {} from {}".format(request.POST,
+                                                                                request.META.get('HTTP_X_FORWARDED_FOR')))
+        return HttpResponse(status=401, content="permission denied!\n")
+
+    config = RECOGNIZER_CONFIG.get(user)
+
+    num_batches_newest = NewestNumberBatch.objects.filter(src=user)
+    if num_batches_newest.exists():
+        config['current_numbers'] = num_batches_newest.latest('date').newest.serialize_numbers()
+    else:
+        num_batches = WaitingNumberBatch.objects.filter(src=user)
+        if num_batches.exists():
+            config['current_numbers'] = num_batches.latest('date').serialize_numbers()
+
+    template_digit_path = os.path.join(RECOGNITION_TEMPLATES_PATH, 'template_digit_{}.png'.format(user))
+    if os.path.exists(template_digit_path):
+        with open(template_digit_path, 'rb') as f:
+            config['template_digit'] = b64encode(f.read()).decode('utf-8')
+
+    template_whole_path = os.path.join(RECOGNITION_TEMPLATES_PATH, 'template_whole_{}.png'.format(user))
+    if os.path.exists(template_whole_path):
+        with open(template_whole_path, 'rb') as f:
+            config['template_whole'] = b64encode(f.read()).decode('utf-8')
+
+    return JsonResponse(config, safe=False)
 
 
 @csrf_exempt
@@ -124,21 +162,30 @@ def write(request):
     num_batch_newest.date = date_
     num_batch_newest.save()
 
-    if request.FILES and 'raw_image' in request.FILES.keys():
-        _save_image(request, src)
+    if request.FILES:
+        _save_images(request, displays)
 
     return HttpResponse(status=201)
 
 
-def _save_image(request, src):
-    image = request.FILES.get('raw_image')
-    extension = os.path.splitext(image.name)[-1]
-    image_name = "{}{}".format(src, extension)
+def _save_images(request, displays):
+    for name, image_request_object in request.FILES.items():
+        if not name.startswith('image_'):
+            continue
 
-    fs = FileSystemStorage(location=IMAGE_DESTINATION)
-    filename = fs.save(image_name, image)
-    if fs.exists(image.name):
-        os.rename(os.path.join(IMAGE_DESTINATION, filename), os.path.join(IMAGE_DESTINATION, image_name))
+        image_id = name.split('_', 1)[1]
+        if not image_id or not image_id.isdigit():
+            continue
+        image_id = int(image_id)
+        display = displays[image_id]
+
+        extension = os.path.splitext(image_request_object.name)[-1]
+        image_name = "{}{}".format(display, extension)
+
+        fs = FileSystemStorage(location=IMAGE_DESTINATION)
+        filename = fs.save(image_name, image_request_object)
+        if fs.exists(image_request_object.name):
+            os.rename(os.path.join(IMAGE_DESTINATION, filename), os.path.join(IMAGE_DESTINATION, image_name))
 
 
 def _get_old_batches(src):

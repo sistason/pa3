@@ -83,6 +83,9 @@ class WaitingNumberBatch(models.Model):
     def __unicode__(self):
         return '{} | {}'.format(self.src, str(self.date))
 
+    def serialize_numbers(self, verbose=False):
+        return [num.serialize(verbose) for num in self.numbers.all()]
+
     def serialize(self, verbose=False):
         return {'src': self.src, 'date': self.date.strftime('%s'), 'src_ip': self.src_ip,
                 'numbers': [num.serialize(verbose) for num in self.numbers.all()],

@@ -15,7 +15,11 @@ urlpatterns = [
 ]
 
 urlpatterns += [
+    path('get_config', number_handling.get_config),
     path('write', number_handling.write),
+]
+
+urlpatterns += [
     path('recompute_stats', statistics_handling.recompute_stats),
     path('check_news', news_handling.check_news),
 ]

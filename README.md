@@ -47,5 +47,5 @@ Please see the READMEs in the respective source directories.
 
 ## TODOs:
 - subscription via SMS?
-- rewrite/refactor number_recognition to py3
-
+- recognition tests
+- gitlab CI deployment

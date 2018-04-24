@@ -29,6 +29,26 @@ USER_TO_NAMES = {'pa_23': {'placement': 'H 23', 'displays': ['H 19', 'H 23', 'H 
 with open(os.path.join('/run', "secrets", "recognizer_auth")) as f:
     RECOGNIZER_AUTH = f.read().strip()
 
+RECOGNITION_TEMPLATES_PATH = os.path.join(BASE_DIR, 'pa3', 'recognition_templates')
+
+RECOGNIZER_CONFIG = {
+    "pa_02": {
+        "ranges": [[1, 300]],
+        "rotate": 180
+    },
+    "pa_10": {
+        "ranges": [[100, 399]],
+        "crop": [523, 320, 606, 360]
+    },
+    "pa_13": {
+        "ranges": [[0, 999], [0, 999], [0, 999], [0, 999], [0, 999]]
+    },
+    "pa_23": {
+        "ranges": [[400, 599], [600, 799], [1000, 1499]]
+    }
+}
+
+
 # Where to write the images the recognizers based their OCR on? (for user validation. /dev/shm is the docker ramdisk)
 IMAGE_DESTINATION = '/dev/shm/'
 
