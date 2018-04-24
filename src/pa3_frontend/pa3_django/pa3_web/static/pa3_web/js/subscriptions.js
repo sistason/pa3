@@ -14,6 +14,7 @@ function subscription_form_init(){
     });
 
     $(".subscription-form").submit(subscribe);
+
 }
 
 $(".subscription input[name=protocols]:radio").on("change", subscription_form_protocol_change);
@@ -56,9 +57,25 @@ function subscribe(event){
         },
         success: function(data){
             var message_alert = get_locale() === 'de' ? 'Erfolgreich abonniert! ' : 'Successfully subscribed!';
-            alert(message_alert);
-            $response.text(get_locale() === 'de' ? 'Erfolgreich abonniert, wenn du das Popup gesehen hast!' :
-                'Successfully subscribed, if you saw the popup!');
+
+            if (!("Notification" in window)) {
+                alert(message_alert);
+            } else if (Notification.permission === "granted") {
+                // If it's okay let's create a notification
+                new Notification(message_alert);
+            }
+            // Otherwise, we need to ask the user for permission
+            else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function (permission) {
+                // If the user accepts, let's create a notification
+                if (permission === "granted") {
+                    new Notification(message_alert);
+                }
+            });
+            }
+
+            $response.text(get_locale() === 'de' ? 'Erfolgreich abonniert!' :
+                'Successfully subscribed!');
             $response.prop("class", "success");
             subscribed = data.subscription;
             check_if_subscriber_is_due(subscribed);
@@ -125,7 +142,13 @@ function get_locale() {
 function alert_and_delete(subscriber, messages){
     var message = messages[get_locale()];
 
-    alert(message);
+    if (Notification.permission === "granted") {
+        new Notification(message);
+        alert(message);
+    }
+    else
+        alert(message);
+
     if (subscriber)
         console.log(subscriber);
         subscribed = undefined;
