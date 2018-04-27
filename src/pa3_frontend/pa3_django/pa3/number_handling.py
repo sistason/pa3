@@ -45,15 +45,15 @@ def get_config(request):
         if num_batches.exists():
             config['current_numbers'] = num_batches.latest('date').serialize_numbers()
 
-    template_digit_path = os.path.join(RECOGNITION_TEMPLATES_PATH, 'template_digit_{}.png'.format(user))
-    if os.path.exists(template_digit_path):
-        with open(template_digit_path, 'rb') as f:
-            config['template_digit'] = b64encode(f.read()).decode('utf-8')
+    template_path = os.path.join(RECOGNITION_TEMPLATES_PATH, 'template_{}.png'.format(user))
+    if os.path.exists(template_path):
+        with open(template_path, 'rb') as f:
+            config['template'] = b64encode(f.read()).decode('utf-8')
 
-    template_whole_path = os.path.join(RECOGNITION_TEMPLATES_PATH, 'template_whole_{}.png'.format(user))
-    if os.path.exists(template_whole_path):
-        with open(template_whole_path, 'rb') as f:
-            config['template_whole'] = b64encode(f.read()).decode('utf-8')
+    digit_mask_path = os.path.join(RECOGNITION_TEMPLATES_PATH, 'digit_mask.png')
+    if os.path.exists(digit_mask_path):
+        with open(digit_mask_path, 'rb') as f:
+            config['digit_mask'] = b64encode(f.read()).decode('utf-8')
 
     return JsonResponse(config, safe=False)
 

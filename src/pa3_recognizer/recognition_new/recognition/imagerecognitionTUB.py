@@ -57,7 +57,7 @@ class ImageRecognitor(AbstractImageRecognitor):
                 5.3 Check which segments are set (pixels/area)
             6. Combine digits and validate the resulting number"""
 
-    template_digit = template_whole = None  # Keep a copy of the template to modify for this algorithm
+    template = None                         # Keep a copy of the template to modify for this algorithm
     iteration = 0                           # For state/logging purposes
     position_of_number_table_in_image = []  # Optimization for not always recomputing the position of the number table
 
@@ -66,8 +66,7 @@ class ImageRecognitor(AbstractImageRecognitor):
         self.fail_histories = [0 for _ in range(config.number_of_numbers)]
 
     def preprocess_image(self, image):
-        self.template_digit = self.config.template_digit.copy()
-        self.template_whole = self.config.template_whole.copy()
+        self.template = self.config.template.copy()
 
         # Make sure image is grayscaled
         if len(image.shape) != 2:
@@ -117,76 +116,38 @@ class ImageRecognitor(AbstractImageRecognitor):
         height, width = image.shape
 
         split_here = int(height / self.config.number_of_numbers)
-        single_number = image.copy()[order*split_here : split_here*(1+order), :]
+        single_number = image.copy()[order*split_here: split_here*(1+order), :]
 
-        single_number = self.utils.threshold_image(single_number)
         if debug:
             print('Single_number: {}'.format(order))
             self.utils.show_image(single_number)
         return single_number
 
-    def find_all_digits_from_single_number(self, img, debug=False):
+    def find_all_digits_from_single_number(self, single_number, debug=False):
         # ------ Find Area of Interest (the numbers only) ------------
-        # TODO: findContours not really neccessary, just manually iterate
         #       from the borders of the image to the center, checking the
         #       requirements. Saves a findContours and a sort for few pixel
         #       checks.
-        height, width = img.shape
-        STRIP = int(height/15)
+        image = self.utils.morph_open_image(single_number, iterations=3)
 
-        _, contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        height, width = image.shape
 
-        conts_combined = []
-        [[conts_combined.extend(j) for j in i] for i in contours]
-        # Sort 
-        contour_pixels = sorted(conts_combined, key=lambda f:f[1])
-        if not contour_pixels:
-                logging.debug('No contour found! h:{0}, w:{1}'.format(height, width))
-                return []
-
-        # Get botmost pixel of a number by only selecting bot contours which 
-        # are part of a bigger vertical pixel segment (i.e. a number)
-        # Done by checking if a vertical strip of 10% img_height is set
-        for contour in contour_pixels:
-            if img[contour[1]+STRIP:contour[1],contour[0]].all():
-                bot = contour[1]-1
-                break
-        else:
-            # Bot is the first pixel, which is located at the top of the image
-            bot = contour_pixels[0][1]
-
-        # Get topmost pixel of a number by only selecting top contours which 
-        # are part of a bigger vertical pixel segment (i.e. a number)
-        # Done by checking if a vertical strip of 10% img_height is set
-        for contour in reversed(contour_pixels):
-            if img[contour[1]:contour[1]-STRIP,contour[0]].all():
-                top = contour[1]+1
-                break
-        else:
-            # Top is the last pixel, which is located at the bottom of the image
-            top = contour_pixels[-1][1]
-
-        # Get the rightmost pixel for the width
-        contour_pixels = sorted(conts_combined, key=lambda f:f[0],reverse=True)
-        for contour in contour_pixels:
-            if img[contour[1],contour[0]-STRIP:contour[0]].all():
-                right = contour[0]+1
-                break
-        else:
-            right = contour_pixels[0][0]
+        bot, top, _, right = self.utils.get_contour_values(image)
+        if not right or not top:
+            return []
 
         # Cut out individual numbers by a sliding horizontal window
         digit_images_to_return = []
         met_empty_space = False
         current_right_edge = right
-        bar_w = int(STRIP/2)
+        bar_w = int(height/30)
         sliding_bar_x = right-bar_w
         while sliding_bar_x-bar_w >= 0:
-            if not self.utils.is_a_percentage_of_pixels_set(img[bot:top, sliding_bar_x-bar_w:sliding_bar_x+bar_w], 0.05):
+            if not self.utils.is_a_percentage_of_pixels_set(image[bot:top, sliding_bar_x-bar_w:sliding_bar_x+bar_w], 0.05):
                 met_empty_space = True
 
             elif met_empty_space:
-                single_digit_image = img[bot:top, sliding_bar_x + bar_w:current_right_edge]
+                single_digit_image = image[bot:top, sliding_bar_x + bar_w:current_right_edge]
                 if debug:
                     self.utils.show_image(single_digit_image)
                 digit_images_to_return.append(single_digit_image)
@@ -195,13 +156,13 @@ class ImageRecognitor(AbstractImageRecognitor):
                 met_empty_space = False
 
             if debug:
-                img_temp = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
-                cv2.rectangle(img_temp, (sliding_bar_x-bar_w, top), (sliding_bar_x+bar_w, bot), (0, 0, 255))
-                self.utils.show_image(img_temp)
+                image_temp = cv2.cvtColor(image.copy(), cv2.COLOR_GRAY2BGR)
+                cv2.rectangle(image_temp, (sliding_bar_x-bar_w, top), (sliding_bar_x+bar_w, bot), (0, 0, 255))
+                self.utils.show_image(image_temp)
 
             sliding_bar_x -= int(math.ceil(width/200))
 
-        digit_images_to_return.append(img[bot:top, 0:current_right_edge])
+        digit_images_to_return.append(image[bot:top, 0:current_right_edge])
 
         return digit_images_to_return
 
@@ -209,11 +170,11 @@ class ImageRecognitor(AbstractImageRecognitor):
         """ Find the number table by matchTemplate, crop, scale and rotate it """
         if not self.position_of_number_table_in_image or (self.iteration % 60):
             try:
-                #Find template
-                result = cv2.matchTemplate(image, self.template_whole, cv2.TM_CCOEFF_NORMED)
+                # Find template
+                result = cv2.matchTemplate(image, self.template, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-                template_height, template_width = self.template_whole.shape
+                template_height, template_width = self.template.shape
                 self.position_of_number_table_in_image = (max_loc[0], max_loc[1],
                         max_loc[0]+template_width, max_loc[1]+template_height)
             except Exception as e:
@@ -240,132 +201,135 @@ class ImageRecognitor(AbstractImageRecognitor):
 
         return number_table
 
-    def recognize_single_seven_segment_digit(self, img, debug=False):
+    @staticmethod
+    def get_set_segment_percentage(image, digit_mask, color, set_pixels_segment):
+        color_lower = np.array([i-5 if i else 0 for i in color])
+        color_upper = np.array([i+5 if i else 0 for i in color])
+        color_mask = cv2.inRange(digit_mask, color_lower, color_upper)
 
-        height, width = img.shape
-        if not img.any() or not height or not width:
-            return -1, 0
-        _, contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        set_pixels_image = cv2.countNonZero(cv2.bitwise_and(image, image, mask=color_mask))
+        return set_pixels_image / set_pixels_segment
 
-        conts_combined = []
-        [[conts_combined.extend(j) for j in i] for i in contours]
-        contour_pixels = sorted(conts_combined, key=lambda f:f[0])
-        if not contour_pixels:
-            return -1, 0
-        # Find left border of the digit
-        if np.sum(img[:,0]) > 255*height/20:    # contours cannot find points on the outside border
-            left = 0
-        else:
-            for contour in contour_pixels:
-                if img[contour[1],contour[0]:contour[0]+int(width/10)].all():
-                    left = contour[0]
-                    break
-            else:
-                left = contour_pixels[-1][0]
+    def recognize_single_seven_segment_digit(self, single_digit, debug=False):
+        mask_unscaled = self.config.digit_mask.copy()
 
-        # Find right border of the digit
-        if np.sum(img[:,-1]) > 255*height/20:    # contours cannot find points on the outside border
-            right = width
-        else:
-            for contour in reversed(contour_pixels):
-                if img[contour[1],contour[0]-int(width/10):contour[0]].all():
-                    right = contour[0]
-                    break
-            else:
-                right = contour_pixels[0][0]
+        top_color_bgr = (0, 0, 255)
+        top_left_color_bgr = (0, 127, 255)
+        top_right_color_bgr = (0, 255, 127)
+        mid_color_bgr = (0, 255, 0)
+        bot_left_color_bgr = (255, 127, 0)
+        bot_right_color_bgr = (127, 255, 0)
+        bot_color_bgr = (255, 0, 0)
 
-        img_num = img[:,left:right]
-        height, width = img_num.shape
-        # It's a 1, if the ratio is way off the normal width/height
-        if 1.0*width/height < 0.4:
-            return 1, 100
+        seven_segment_positions = [(0, 1, 2, 4, 5, 6),
+                                   (2, 5),
+                                   (0, 2, 3, 4, 6),
+                                   (0, 2, 3, 5, 6),
+                                   (1, 2, 3, 5),
+                                   (0, 1, 3, 5, 6),
+                                   (0, 1, 3, 4, 5, 6),
+                                   (0, 2, 5),
+                                   (0, 1, 2, 3, 4, 5, 6),
+                                   (0, 1, 2, 3, 5, 6)]
+        seven_segment_positions_bool = [[True if i in ss_pos else False for i in range(7)]
+                                        for ss_pos in seven_segment_positions]
 
-        # --- Set up the boxes searched for the segments ---
-        segment_size_vert, segment_size_horiz = img_num.shape[0]/10.0, img_num.shape[1]/10.0
+        image_thresholded = self.utils.threshold_image(single_digit.copy())
+        image_opened = self.utils.morph_open_image(image_thresholded, iterations=1)
+        bot, top, _, right = self.utils.get_contour_values(image_opened)
+        image = image_opened[bot:top, :right]
 
-        top_l, top_r =          0,                                    0 + int(segment_size_horiz*2)
-        top_mid_l, top_mid_r = int(height/4  -segment_size_vert),    int(height/4 + segment_size_vert)
-        mid_l, mid_r = int(height/2  -segment_size_horiz),   int(height/2 + segment_size_horiz)
-        bot_mid_l, bot_mid_r = int(3*height/4-segment_size_vert),    int(3*height/4 + segment_size_vert)
-        bot_l, bot_r = height - int(segment_size_horiz*2),    height
-        left_l, left_r      = 0,                                    int(math.floor(0 + segment_size_horiz*2.0))
-        center_l, center_r = int(width/2-segment_size_vert), int(width/2+segment_size_vert)
-        right_l, right_r    = int(math.ceil(width  -segment_size_horiz*2.0)), width
+        # Sanity Checks.
+        height, width = image.shape
+        if not image.any() or not height or not width or image.size < 0.5*image_thresholded.size:
+            return -1, 100
 
-        top_segment       = np.mean(img_num[top_l:top_r,         center_l:center_r])
-        top_left_segment  = np.mean(img_num[top_mid_l:top_mid_r, left_l:left_r ])
-        top_right_segment = np.mean(img_num[top_mid_l:top_mid_r, right_l:right_r])
-        middle_segment    = np.mean(img_num[mid_l:mid_r,         center_l:center_r])
-        bot_left_segment  = np.mean(img_num[bot_mid_l:bot_mid_r, left_l:left_r])
-        bot_right_segment = np.mean(img_num[bot_mid_l:bot_mid_r, right_l:right_r ])
-        bot_segment       = np.mean(img_num[bot_l:bot_r,         center_l:center_r])
+        # add height top/bot until exact size
+        digit_mask = self.resize_mask_to_image(image, mask_unscaled)
+        set_pixels_segment = cv2.countNonZero(cv2.cvtColor(digit_mask, cv2.COLOR_BGR2GRAY))/7
 
-        # --- Get number from segments set ---
-        # If segments don't match, repeat with lower threshold (and lower certanty)
-        certanty = 100
-        thresholds = [255.0/6, 255.0/7, 255.0/8, 255.0/10, 255.0/16, 255.0/24]
-        for thres in thresholds:
-            top      = top_segment      > thres
-            top_left = top_left_segment > thres
-            top_right= top_right_segment> thres
-            middle   = middle_segment   > thres
-            bot_left = bot_left_segment > thres
-            bot_right= bot_right_segment> thres
-            bot      = bot_segment      > thres
+        f = lambda color: self.get_set_segment_percentage(image, digit_mask, color, set_pixels_segment)
+        top = f(top_color_bgr)
+        top_left = f(top_left_color_bgr)
+        top_right = f(top_right_color_bgr)
+        mid = f(mid_color_bgr)
+        bot_left = f(bot_left_color_bgr)
+        bot_right = f(bot_right_color_bgr)
+        bot = f(bot_color_bgr)
 
-            if debug:
-                def _color(correct):
-                    return (0, 255, 0) if correct else (0, 0, 255)
-                img_temp = cv2.cvtColor(img_num, cv2.COLOR_GRAY2BGR)
-                cv2.rectangle(img_temp, (center_l,top_l), (center_r,top_r), _color(top))
-                cv2.rectangle(img_temp, (left_l,top_mid_l), (left_r,top_mid_r), _color(top_left))
-                cv2.rectangle(img_temp, (right_l,top_mid_l), (right_r,top_mid_r), _color(top_right))
-                cv2.rectangle(img_temp, (center_l,mid_l), (center_r,mid_r), _color(middle))
-                cv2.rectangle(img_temp, (left_l,bot_mid_l), (left_r,bot_mid_r), _color(bot_left))
-                cv2.rectangle(img_temp, (right_l,bot_mid_l), (right_r,bot_mid_r), _color(bot_right))
-                cv2.rectangle(img_temp, (center_l,bot_l), (center_r,bot_r), _color(bot))
-                self.utils.show_image(img_temp)
+        segments = [top, top_left, top_right, mid, bot_left, bot_right, bot]
 
-            if top and top_left and top_right and middle and bot_left and bot_right and bot:
-                num=8
-            elif top and top_left and top_right and bot_left and bot_right and bot and not middle:
-                num=0
-            elif top and top_left and top_right and middle and bot_right and bot and not bot_left:
-                num=9
-            elif top and top_left and middle and bot_left and bot_right and bot and not top_right:
-                num=6
-            elif top and top_left and middle and bot_right and bot and not top_right and not bot_left:
-                num=5
-            elif top and top_right and middle and bot_right and bot and not top_left and not bot_left:
-                num=3
-            elif top and top_right and middle and bot_left and bot and not top_left and not bot_right:
-                num=2
-            elif top_left and top_right and middle and bot_right and not top and not bot_left and not bot:
-                num=4
-            elif top and top_right and bot_right and not top_left and not middle and not bot_left and not bot:
-                num=7
-            elif top_right and bot_right and not top and not top_left and not middle and not bot_left and not bot:
-                num=1   # But should be recognised before
-            else:
-                certanty -= 100/len(thresholds)
+        segments_set_thresholds = {100: 0.2, 75: 0.3, 50: 0.40, 25: 0.50}
+        for confidence, threshold in segments_set_thresholds.items():
+            segments_set = [seg >= threshold for seg in segments]
+
+            # Tried to get (weighted-) absolute confidence-values per number, so to be more dynamic.
+            # But the algorithm was too complicated and my images too clear to be necessary
+            #
+            # median_percentage = np.mean([s for s in segments if s > 0.3])
+            # segments_normalized = [seg-median_percentage for seg in segments]
+            # print(median_percentage, segments_normalized)
+
+            # ratings = [sum([segments[segment]*10 if segment in ss_positions_i else segments[segment] for segment in range(7)])
+            #           for ss_positions_i in seven_segment_positions]
+            # print("0:{:.2}; 1:{:.2}; 2:{:.2}; 3:{:.2}; 4:{:.2}; 5:{:.2}; 6:{:.2}; 7:{:.2}; 8:{:.2}; 9:{:.2}".format(
+            #    *ratings))
+            # num = max(enumerate(ratings), key=lambda prc: prc[1])[0]
+
+            ratings = [(False not in [segments_set[i] == segment_set for i, segment_set in enumerate(ss_pos)])
+                       for ss_pos in seven_segment_positions_bool]
+
+            if ratings.count(True) != 1:
+                print(segments)
+                print(ratings)
                 continue
-            return num, certanty
+
+            num = ratings.index(True)
+
+            return num, confidence
 
         return -1, 0
+
+    def resize_mask_to_image(self, image, mask):
+        """
+        Resizes the mask to match the image.shape.
+        After scaling, the height could be off-by-one (float), so add/remove a row at the bottom.
+        The width will be off, so add/remove empty columns left, so the mask gets aligned to the right of the image.
+        """
+        height, width = image.shape
+
+        mask = self.utils.scale_image(mask, height / mask.shape[0])
+
+        # Add/remove a row at the bottom, if necessary
+        if mask.shape[0] > height:
+            mask = mask[1:, :]
+        if mask.shape[0] < height:
+            row_shape = list(mask.shape)
+            row_shape[0] = 1
+            blank_row = np.zeros(row_shape, np.uint8)
+            mask = np.concatenate((blank_row, mask), axis=0)
+
+        # Add/remove columns left, until the mask.width == image.width
+        column_shape = list(mask.shape)
+        column_shape[1] = 1
+        blank_column = np.zeros(column_shape, np.uint8)
+        while mask.shape[1] != width:
+            mask = mask[:, 1:] if mask.shape[1] > width else np.concatenate((blank_column, mask), axis=1)
+
+        return mask
 
 
 if __name__ == '__main__':
     import sys
-    template=cv2.imread(sys.argv[1], cv2.IMREAD_GRAYSCALE)
-    img=cv2.imread(sys.argv[2])
+    template = cv2.imread(sys.argv[1], cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(sys.argv[2])
 
-    logging.basicConfig(format='%(levelname)s:%(funcName)s:%(message)s',
-                                                     level=logging.INFO)
+    logging.basicConfig(format='%(levelname)s:%(funcName)s:%(message)s', level=logging.INFO)
 
-    from waitingnumberrecognition.waitingnumberrecognition import Configuration
-    c = {"valid_ranges":[[0, 999],[0, 999],[0, 999]], "previous_numbers":[448,719,71]}
+    from waitingnumberrecognition import Configuration
+    c = {"valid_ranges": [[0, 999], [0, 999], [0, 999]], "previous_numbers": [448, 719, 71]}
     _config = Configuration(c)
     _config.template = template
 
-    i = ImageRecognitor2015(_config)
-    print([str(num) for num in i.recognize(img)])
+    imgrec = ImageRecognitor2015(_config)
+    print([str(num) for num in imgrec.recognize(img)])

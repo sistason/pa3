@@ -24,15 +24,18 @@ class Configuration():
         # How many numbers are (vertically) on the table?
         self.number_of_numbers = len(self.valid_ranges)
 
-        self.template_digit = self.decode_template(server_conf.get('template_digit'))
-        self.template_whole = self.decode_template(server_conf.get('template_whole'))
+        self.template = self.decode_template(server_conf.get('template'), gray=True)
+        self.digit_mask = self.decode_template(server_conf.get('digit_mask'))
 
     @staticmethod
-    def decode_template(template_encoded):
-        template_encoded_numpy = np.fromstring(b64decode(template_encoded), dtype=np.uint8)
+    def decode_template(template_encoded, gray=False):
+        if template_encoded is None:
+            return
+
+        template_encoded_numpy = np.frombuffer(b64decode(template_encoded), dtype=np.uint8)
         if template_encoded_numpy is not None:
             template = cv2.imdecode(template_encoded_numpy, cv2.IMREAD_COLOR)
-            return cv2.cvtColor(template, cv2.COLOR_BGR2GRAY) if len(template.shape) != 2 else template
+            return cv2.cvtColor(template, cv2.COLOR_BGR2GRAY) if gray and len(template.shape) != 2 else template
         else:
             logging.error("Template malformed!")
 
