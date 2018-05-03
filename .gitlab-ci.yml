@@ -21,3 +21,4 @@ deploy_web:
 
 deploy_rec:
   stage: deploy
+  script: "echo TODO"
