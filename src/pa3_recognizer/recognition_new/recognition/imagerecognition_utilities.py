@@ -79,15 +79,20 @@ class ImageRecognitionUtilities:
 
         center = np.uint8(center)
         res = center[label.flatten()]
-        res2 = res.reshape(img.shape)
-        brightness_numbers = np.max(res2)
+        kmeaned = res.reshape(img.shape)
+        brightness_numbers = np.max(kmeaned)
         brightness_k = sorted(center)[brightness][0]
         _, res2 = cv2.threshold(img, brightness_k, 255, 0)
-        logging.debug('Thresholding image to {0}'.format(brightness_numbers))
+
+        ImageRecognitionUtilities.show_image([image, kmeaned, res2])
+        import time; time.sleep(3)
+
         return res2
 
     @staticmethod
     def morph_open_image(image, iterations=1):
+        if not iterations:
+            return image
         kernel = np.array([[0, 1, 0],
                            [1, 1, 1],
                            [0, 1, 0]], dtype=np.uint8)
@@ -105,6 +110,8 @@ class ImageRecognitionUtilities:
                 if image.item(h, w) == 255:
                     conts_combined.append((h, w))
 
+        return conts_combined
+
     def get_contour_values(self, image, strip_size=0):
         bot, top, left, right = 0, 0, 0, 0
         if len(image.shape) != 2:
@@ -113,7 +120,7 @@ class ImageRecognitionUtilities:
 
         height, width = image.shape
         if not strip_size:
-            strip_size = int(height / 15)
+            strip_size = int(height / 15)-1
 
         conts_combined = self.get_set_pixels(image)
 
@@ -127,6 +134,7 @@ class ImageRecognitionUtilities:
                 break
             if pixel[0] >= height/2:
                 top = pixel[0]
+                break
         else:
             top = 0
 
@@ -136,6 +144,7 @@ class ImageRecognitionUtilities:
                 break
             if pixel[0] <= height/2:
                 bot = pixel[0]
+                break
         else:
             bot = height
 
@@ -147,6 +156,7 @@ class ImageRecognitionUtilities:
                 break
             if pixel[1] <= width/2:
                 right = pixel[1]
+                break
         else:
             right = width
 
@@ -156,9 +166,11 @@ class ImageRecognitionUtilities:
                 break
             if pixel[1] >= width/2:
                 left = pixel[1]
+                break
         else:
             left = 0
 
+        logging.debug('Found Contours [{}:{}, {}:{}]'.format(bot, top, left, right))
         return bot, top, left, right
 
     @staticmethod
@@ -166,16 +178,19 @@ class ImageRecognitionUtilities:
         if type(images) != list:
             images = [images]
 
+        whitespace = 3
         height = max(image.shape[0] for image in images)
         width = sum(image.shape[1] for image in images)
         images = [cv2.cvtColor(image, cv2.COLOR_GRAY2BGR) if len(image.shape) != 3 else image for image in images]
-        stack = np.zeros((height, width, 3))
+        stack = np.zeros((height, width+len(images)*whitespace, 3))
 
         y = 0
         for image in images:
             h, w = image.shape[:2]
+
             stack[0:h, y:y + w] = image
-            y += w
+            stack[0:h, y+w:y+w+whitespace] = np.ones((h, whitespace, 3))
+            y += w+whitespace
 
         cv2.imwrite('/srv/pa3/current_images/debug_image.png', stack)
         return

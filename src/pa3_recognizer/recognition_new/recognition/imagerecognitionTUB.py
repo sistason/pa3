@@ -85,7 +85,6 @@ class ImageRecognitor(AbstractImageRecognitor):
             for order in range(self.config.number_of_numbers):
                 single_number = self.find_single_number_in_number_table(number_table, order, debug=False)
                 digit_images = self.find_all_digits_from_single_number(single_number, debug=False)
-                digit_images.reverse()
 
                 if self.fail_histories[order] > 10:
                     self.config.previous_numbers[order] = -1
@@ -123,52 +122,64 @@ class ImageRecognitor(AbstractImageRecognitor):
             self.utils.show_image(single_number)
         return single_number
 
-    def find_all_digits_from_single_number(self, single_number, debug=False):
+    def find_all_digits_from_single_number(self, single_number, debug=False, iterations=0):
         # ------ Find Area of Interest (the numbers only) ------------
         #       from the borders of the image to the center, checking the
         #       requirements. Saves a findContours and a sort for few pixel
         #       checks.
-        image_thresholded = self.utils.threshold_image(single_number)
-        image = self.utils.morph_open_image(image_thresholded, iterations=3)
+        image_thresholded = self.utils.threshold_image(single_number, k=7, brightness=-2)
+        image_opened = self.utils.morph_open_image(image_thresholded, iterations=iterations)
 
-        height, width = image.shape
-        bot, top, _, right = self.utils.get_contour_values(image)
+        y_max, y_min, _, x_max = self.utils.get_contour_values(image_opened)
+        image = image_opened[y_min:y_max, :]
 
-        self.utils.show_image([single_number, image_thresholded, image])
-        print(bot, top, _, right)
-        time.sleep(2)
+        self.utils.show_image([single_number, image_thresholded, image_opened, image, image[:, _:x_max]])
+        time.sleep(1)
 
-        if not right or not top:
+        if not x_max or not y_max:
             return []
 
+        digit_images_to_return = self.split_digits_by_sliding_bar(debug, single_number[y_min:y_max, :],
+                                                                  image, x_max)
+        if len(digit_images_to_return) != self.config.number_of_digits and iterations <= 2:
+            return self.find_all_digits_from_single_number(single_number, debug, iterations=iterations+1)
+
+        return reversed(digit_images_to_return)
+
+    def split_digits_by_sliding_bar(self, debug, single_number, image, x_max):
         # Cut out individual numbers by a sliding horizontal window
         digit_images_to_return = []
+
+        height, width = image.shape
         met_empty_space = False
-        current_right_edge = right
-        bar_w = int(height/30)
-        sliding_bar_x = right-bar_w
-        while sliding_bar_x-bar_w >= 0:
-            if not self.utils.is_a_percentage_of_pixels_set(image[bot:top, sliding_bar_x-bar_w:sliding_bar_x+bar_w], 0.05):
+        current_right_edge = x_max
+        bar_w = int(height / 30)
+        sliding_bar_x = x_max - bar_w
+        while sliding_bar_x - bar_w >= 0:
+            if not self.utils.is_a_percentage_of_pixels_set(
+                    image[:, sliding_bar_x - bar_w:sliding_bar_x + bar_w],
+                    bar_w / 100.0):
                 met_empty_space = True
 
             elif met_empty_space:
-                single_digit_image = single_number[bot:top, sliding_bar_x + bar_w:current_right_edge]
+                single_digit_image = single_number[:, sliding_bar_x + bar_w:current_right_edge]
                 if debug:
                     self.utils.show_image(single_digit_image)
+                    time.sleep(2)
+
                 digit_images_to_return.append(single_digit_image)
 
-                current_right_edge = sliding_bar_x+bar_w
+                current_right_edge = sliding_bar_x + bar_w
                 met_empty_space = False
 
             if debug:
                 image_temp = cv2.cvtColor(image.copy(), cv2.COLOR_GRAY2BGR)
-                cv2.rectangle(image_temp, (sliding_bar_x-bar_w, top), (sliding_bar_x+bar_w, bot), (0, 0, 255))
+                cv2.rectangle(image_temp, (sliding_bar_x - bar_w, 0), (sliding_bar_x + bar_w, height), (0, 0, 255))
                 self.utils.show_image(image_temp)
+                time.sleep(0.3)
 
-            sliding_bar_x -= int(math.ceil(width/200))
-
-        digit_images_to_return.append(single_number[bot:top, 0:current_right_edge])
-
+            sliding_bar_x -= int(math.ceil(width / 200))
+        digit_images_to_return.append(single_number[:, 0:current_right_edge])
         return digit_images_to_return
 
     def find_number_table_in_image(self, image, debug=False):
@@ -215,8 +226,27 @@ class ImageRecognitor(AbstractImageRecognitor):
         set_pixels_image = cv2.countNonZero(cv2.bitwise_and(image, image, mask=color_mask))
         return set_pixels_image / set_pixels_segment
 
-    def recognize_single_seven_segment_digit(self, single_digit, debug=False):
-        mask_unscaled = self.config.digit_mask.copy()
+    def recognize_single_seven_segment_digit(self, single_digit, iterations=0, debug=False):
+
+        image_thresholded = self.utils.threshold_image(single_digit)
+        image_opened = self.utils.morph_open_image(image_thresholded, iterations=iterations)
+        y_max, y_min, _, x_max = self.utils.get_contour_values(image_opened)
+        image = image_opened[y_min:y_max, :x_max]
+
+        # self.utils.show_image([single_digit, image_thresholded, image_opened, image])
+        # time.sleep(1)
+
+        digit, confidence = self.get_digit_from_segments(image, image_thresholded)
+        if digit == -1 and iterations <= 2:
+            return self.recognize_single_seven_segment_digit(single_digit, iterations+1)
+
+        return digit, confidence
+
+    def get_digit_from_segments(self, image, image_thresholded):
+        # Sanity Checks.
+        height, width = image.shape
+        if not image.any() or not height or not width or image.size < 0.5*image_thresholded.size:
+            return -1, 100
 
         top_color_bgr = (0, 0, 255)
         top_left_color_bgr = (0, 127, 255)
@@ -239,17 +269,8 @@ class ImageRecognitor(AbstractImageRecognitor):
         seven_segment_positions_bool = [[True if i in ss_pos else False for i in range(7)]
                                         for ss_pos in seven_segment_positions]
 
-        image_thresholded = self.utils.threshold_image(single_digit)
-        image_opened = self.utils.morph_open_image(image_thresholded, iterations=1)
-        bot, top, _, right = self.utils.get_contour_values(image_opened)
-        image = image_opened[bot:top, :right]
-
-        # Sanity Checks.
-        height, width = image.shape
-        if not image.any() or not height or not width or image.size < 0.5*image_thresholded.size:
-            return -1, 100
-
         # add height top/bot until exact size
+        mask_unscaled = self.config.digit_mask.copy()
         digit_mask = self.resize_mask_to_image(image, mask_unscaled)
         set_pixels_segment = cv2.countNonZero(cv2.cvtColor(digit_mask, cv2.COLOR_BGR2GRAY))/7
 
@@ -267,19 +288,6 @@ class ImageRecognitor(AbstractImageRecognitor):
         segments_set_thresholds = {100: 0.2, 75: 0.3, 50: 0.40, 25: 0.50}
         for confidence, threshold in segments_set_thresholds.items():
             segments_set = [seg >= threshold for seg in segments]
-
-            # Tried to get (weighted-) absolute confidence-values per number, so to be more dynamic.
-            # But the algorithm was too complicated and my images too clear to be necessary
-            #
-            # median_percentage = np.mean([s for s in segments if s > 0.3])
-            # segments_normalized = [seg-median_percentage for seg in segments]
-            # print(median_percentage, segments_normalized)
-
-            # ratings = [sum([segments[segment]*10 if segment in ss_positions_i else segments[segment] for segment in range(7)])
-            #           for ss_positions_i in seven_segment_positions]
-            # print("0:{:.2}; 1:{:.2}; 2:{:.2}; 3:{:.2}; 4:{:.2}; 5:{:.2}; 6:{:.2}; 7:{:.2}; 8:{:.2}; 9:{:.2}".format(
-            #    *ratings))
-            # num = max(enumerate(ratings), key=lambda prc: prc[1])[0]
 
             ratings = [(False not in [segments_set[i] == segment_set for i, segment_set in enumerate(ss_pos)])
                        for ss_pos in seven_segment_positions_bool]

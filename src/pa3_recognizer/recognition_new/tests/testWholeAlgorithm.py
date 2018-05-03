@@ -1,40 +1,50 @@
 import unittest
 from hamcrest import *
 import os
+from base64 import b64encode
 from cv2 import imread
-from waitingnumberrecognition.imagecreation import ImageCreator
-from waitingnumberrecognition.recognition.imagerecognition2015 import ImageRecognitor2015
-from waitingnumberrecognition.waitingnumberrecognition import Configuration
+
+from recognition.imagerecognitionTUB import ImageRecognitor
+from waitingnumberrecognition import Configuration
 
 
-class ImageRecognition2015Should(unittest.TestCase):
+class ImageRecognitionTUBShould(unittest.TestCase):
     def setUp(self):
-        base_dir = os.path.abspath(os.path.dirname(__file__))
-        test_dir = os.path.join(base_dir, "images/whole/")
-        self.template_dir = os.path.join(base_dir, "images/whole/templates/")
-        self.image_creator = ImageCreator(path_=test_dir)
+        self.base_dir = os.path.abspath(os.path.dirname(__file__))
+        template_dir = os.path.join(self.base_dir, "images/whole/templates/")
+        template_path = os.path.join(self.base_dir, "images/mask.png")
+        self.digit_mask = self.get_template(template_path)
+        self.templates = dict(((i.rsplit('.', 1)[0],
+                               self.get_template(os.path.join(template_dir, i),
+                                                 gray=True)) for i in os.listdir(template_dir)))
+
+    def get_template(self, template_path, gray=False):
+        with open(template_path, 'rb') as f:
+            return Configuration.decode_template(b64encode(f.read()).decode('utf-8'), gray=gray)
 
     def test_recognize_all_images(self):
-        end = False
-        while not end:
-            image_name, image = self.image_creator.get_image(test=True)
-            if image is None:
-                end = True
+        test_dir = os.path.join(self.base_dir, "images/whole/")
+        for whole_image_file in os.listdir(test_dir):
+            whole_image_path = os.path.join(test_dir, whole_image_file)
+            if not os.path.isfile(whole_image_path):
                 continue
+            whole_image = imread(whole_image_path)
 
-            full_filename = image_name.split('/')[-1]
-            filename, extension = full_filename.split('.')
-            numbers, type_ = filename.split('_')
-
-            template_image = imread(os.path.join(self.template_dir, type_+'.'+extension))
+            filename, extension = whole_image_file.split('.')
+            numbers, type_ = filename.split('_', 1)
 
             expected = [int(number) for number in numbers.split(',')]
-            _c = {'valid_ranges':[[i,i] for i in expected], 'previous_numbers':expected}
-            _conf = Configuration(_c)
-            _conf.set_template(template_image)
-            image_recognitor = ImageRecognitor2015(_conf)
+            #if expected[0] != 388:
+            #    continue
 
-            actual = [n.number for n in image_recognitor.recognize(image)]
+            _c = {'ranges':[[i-10, i+10] for i in expected], 'current_numbers': [{'number': e} for e in expected], 'digits': 3}
+
+            config = Configuration(_c)
+            config.digit_mask = self.digit_mask
+            config.template = self.templates.get(type_)
+            image_recognitor = ImageRecognitor(config)
+
+            actual = [n.number for n in image_recognitor.recognize(whole_image)]
             assert_that(actual, equal_to(expected))
 
 if __name__ == "__main__":

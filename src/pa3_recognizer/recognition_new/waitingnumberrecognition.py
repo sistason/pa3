@@ -23,6 +23,8 @@ class Configuration():
         self.rotate = server_conf.get('rotate', 0)
         # How many numbers are (vertically) on the table?
         self.number_of_numbers = len(self.valid_ranges)
+        # How many digits are in the table per number?
+        self.number_of_digits = server_conf.get('digits', 3)
 
         self.template = self.decode_template(server_conf.get('template'), gray=True)
         self.digit_mask = self.decode_template(server_conf.get('digit_mask'))

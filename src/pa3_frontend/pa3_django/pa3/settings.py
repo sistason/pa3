@@ -34,16 +34,20 @@ RECOGNITION_TEMPLATES_PATH = os.path.join(BASE_DIR, 'pa3', 'recognition_template
 RECOGNIZER_CONFIG = {
     "pa_02": {
         "ranges": [[1, 300]],
+        "digits": 3,
         "rotate": 180
     },
     "pa_10": {
         "ranges": [[100, 399]],
+        "digits": 3,
         "crop": [523, 320, 606, 360]
     },
     "pa_13": {
+        "digits": 3,
         "ranges": [[0, 999], [0, 999], [0, 999], [0, 999], [0, 999]]
     },
     "pa_23": {
+        "digits": 3,
         "ranges": [[400, 599], [600, 799], [1000, 1499]]
     }
 }
