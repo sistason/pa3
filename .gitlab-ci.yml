@@ -1,0 +1,15 @@
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  image: python3
+  script: cat file1.txt file2.txt | grep -q 'Hello world'
+
+deploy_web:
+  stage: deploy
+  script: cat file1.txt file2.txt | gzip > packaged.gz
+
+deploy_rec:
+  stage: deploy
