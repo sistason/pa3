@@ -1,15 +1,23 @@
 stages:
+  - build
   - test
   - deploy
 
-test:
+build:
+  stage: build
+  script: "echo This is python, no building here :)"
+
+test_rec:
   stage: test
   image: python3
-  script: cat file1.txt file2.txt | grep -q 'Hello world'
+  before_script:
+    - apt-get -y install python3-opencv python3-requests
+  script:
+    - "cat file1.txt file2.txt | grep -q 'Hello world'"
 
 deploy_web:
   stage: deploy
-  script: cat file1.txt file2.txt | gzip > packaged.gz
+  script: "cat file1.txt file2.txt | gzip > packaged.gz"
 
 deploy_rec:
   stage: deploy
