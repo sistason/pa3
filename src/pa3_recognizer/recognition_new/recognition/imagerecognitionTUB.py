@@ -128,11 +128,16 @@ class ImageRecognitor(AbstractImageRecognitor):
         #       from the borders of the image to the center, checking the
         #       requirements. Saves a findContours and a sort for few pixel
         #       checks.
-        image = self.utils.morph_open_image(single_number, iterations=3)
+        image_thresholded = self.utils.threshold_image(single_number)
+        image = self.utils.morph_open_image(image_thresholded, iterations=3)
 
         height, width = image.shape
-
         bot, top, _, right = self.utils.get_contour_values(image)
+
+        self.utils.show_image([single_number, image_thresholded, image])
+        print(bot, top, _, right)
+        time.sleep(2)
+
         if not right or not top:
             return []
 
@@ -147,7 +152,7 @@ class ImageRecognitor(AbstractImageRecognitor):
                 met_empty_space = True
 
             elif met_empty_space:
-                single_digit_image = image[bot:top, sliding_bar_x + bar_w:current_right_edge]
+                single_digit_image = single_number[bot:top, sliding_bar_x + bar_w:current_right_edge]
                 if debug:
                     self.utils.show_image(single_digit_image)
                 digit_images_to_return.append(single_digit_image)
@@ -162,7 +167,7 @@ class ImageRecognitor(AbstractImageRecognitor):
 
             sliding_bar_x -= int(math.ceil(width/200))
 
-        digit_images_to_return.append(image[bot:top, 0:current_right_edge])
+        digit_images_to_return.append(single_number[bot:top, 0:current_right_edge])
 
         return digit_images_to_return
 
@@ -234,7 +239,7 @@ class ImageRecognitor(AbstractImageRecognitor):
         seven_segment_positions_bool = [[True if i in ss_pos else False for i in range(7)]
                                         for ss_pos in seven_segment_positions]
 
-        image_thresholded = self.utils.threshold_image(single_digit.copy())
+        image_thresholded = self.utils.threshold_image(single_digit)
         image_opened = self.utils.morph_open_image(image_thresholded, iterations=1)
         bot, top, _, right = self.utils.get_contour_values(image_opened)
         image = image_opened[bot:top, :right]

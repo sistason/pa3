@@ -96,64 +96,68 @@ class ImageRecognitionUtilities:
         return image_opened
 
     @staticmethod
-    def get_contour_values(image, strip_size=0):
+    def get_set_pixels(image):
+        height, width = image.shape
+
+        conts_combined = []
+        for h in range(height):
+            for w in range(width):
+                if image.item(h, w) == 255:
+                    conts_combined.append((h, w))
+
+    def get_contour_values(self, image, strip_size=0):
+        bot, top, left, right = 0, 0, 0, 0
+        if len(image.shape) != 2:
+            logging.warning('image was not thresholded before finding contours!')
+            return bot, top, left, right
+
         height, width = image.shape
         if not strip_size:
             strip_size = int(height / 15)
 
-        # TODO: findContours not really neccessary, just manually iterate
-        _, contours, hierarchy = cv2.findContours(image.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        conts_combined = []
-        [[conts_combined.extend(j) for j in i] for i in contours]
-        # Sort
-        contour_pixels = sorted(conts_combined, key=lambda f: f[1])
-        if not contour_pixels:
-            logging.debug('No contour found! h:{}, w:{}'.format(*image.shape))
-            return 0, 0, 0, 0
+        conts_combined = self.get_set_pixels(image)
 
-        # Get botmost pixel of a number by only selecting bot contours which
-        # are part of a bigger vertical pixel segment (i.e. a number)
-        # Done by checking if a vertical strip of 10% image_height is set
-        for contour in contour_pixels:
-            if image[contour[1] + strip_size:contour[1], contour[0]].all():
-                bot = contour[1] - 1
+        # Get topmost pixel of the relevant part of the image by checking which pixel
+        # is part of a bigger vertical pixel segment (i.e. a number)
+        # Done by checking if a vertical strip of strip_size image_height is set
+        pixels = sorted(conts_combined, key=lambda f: f[0])
+        for pixel in pixels:
+            if image[pixel[0]:pixel[0]+strip_size, pixel[1]].all():
+                top = pixel[0]
                 break
+            if pixel[0] >= height/2:
+                top = pixel[0]
         else:
-            bot = contour_pixels[0][1]
+            top = 0
 
-        # Get topmost pixel of a number by only selecting top contours which
-        # are part of a bigger vertical pixel segment (i.e. a number)
-        # Done by checking if a vertical strip of 10% image_height is set
-        for contour in reversed(contour_pixels):
-            if image[contour[1]:contour[1] - strip_size, contour[0]].all():
-                top = contour[1] + 1
+        for pixel in reversed(pixels):
+            if image[pixel[0] - strip_size:pixel[0], pixel[1]].all():
+                bot = pixel[0]
                 break
+            if pixel[0] <= height/2:
+                bot = pixel[0]
         else:
-            top = contour_pixels[-1][1]
+            bot = height
 
-        # Get the rightmost pixel for the width
-        contour_pixels = sorted(conts_combined, key=lambda f: f[0], reverse=True)
-        if np.sum(image[:, -1]) > 255*strip_size: # contours cannot find points on the outside border, so check manually
+        # Get the rightmost pixel for the width via the same algorithm, but horizontally
+        pixels = sorted(conts_combined, key=lambda f: f[1], reverse=True)
+        for pixel in pixels:
+            if image[pixel[0], pixel[1] - strip_size:pixel[1]].all():
+                right = pixel[1]
+                break
+            if pixel[1] <= width/2:
+                right = pixel[1]
+        else:
             right = width
-        else:
-            for contour in contour_pixels:
-                if image[contour[1], contour[0] - strip_size:contour[0]].all():
-                    right = contour[0] + 1
-                    break
-            else:
-                right = contour_pixels[0][0]
 
-        # Find left border of the digit
-        contour_pixels = sorted(conts_combined, key=lambda f: f[0])
-        if np.sum(image[:, 0]) > 255*strip_size: # contours cannot find points on the outside border, so check manually
-            left = 0
+        for pixel in reversed(pixels):
+            if image[pixel[0], pixel[1]:pixel[1] + strip_size].all():
+                left = pixel[1]
+                break
+            if pixel[1] >= width/2:
+                left = pixel[1]
         else:
-            for contour in contour_pixels:
-                if image[contour[1], contour[0]:contour[0]+strip_size].all():
-                    left = contour[0]
-                    break
-            else:
-                left = contour_pixels[-1][0]
+            left = 0
 
         return bot, top, left, right
 

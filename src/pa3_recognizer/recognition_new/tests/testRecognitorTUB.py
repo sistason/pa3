@@ -30,12 +30,12 @@ class RecognitorTUBShould(unittest.TestCase):
 
         assert_that(type(self.image_recognitor.preprocess_image(image_whole)), equal_to(ndarray))
         assert_that(type(self.image_recognitor.config.template), equal_to(ndarray))
-
+    """
     def test_recognize_digits(self):
         digits_dir = os.path.join(self.base_dir, "images/digits/")
         for digit_file in os.listdir(digits_dir):
             digit_path = os.path.join(digits_dir, digit_file)
-            expected_digit_int = int(digit_file.split('_')[0])
+
 
             image_digit = imread(digit_path, IMREAD_GRAYSCALE)
             height, width = image_digit.shape
@@ -43,10 +43,10 @@ class RecognitorTUBShould(unittest.TestCase):
             if width > 35:
                 image_digit = self.image_recognitor.utils.scale_image(image_digit, 35.0 / width)
 
-            actual_digit_int = self.image_recognitor.recognize_single_seven_segment_digit(image_digit, debug=False)[0]
+            actual_digit_int = self.image_recognitor.recognize_single_seven_segment_digit(image_digit)[0]
+            expected_digit_int = int(digit_file.split('_')[0])
 
-            print('{}: {}'.format(expected_digit_int, actual_digit_int))
-            # assert_that(actual_digit_int, equal_to(expected_digit_int))
+            assert_that(actual_digit_int, equal_to(expected_digit_int))
 """
     def test_recognize_numbers(self):
         numbers_dir = os.path.join(self.base_dir, "images/single_numbers/")
@@ -60,13 +60,13 @@ class RecognitorTUBShould(unittest.TestCase):
                 image_number = self.image_recognitor.utils.scale_image(image_number, 100.0 / width)
 
             actual_number = Number(expected_number, [expected_number, expected_number])
-            for digit in self.image_recognitor.find_all_digits_from_single_number(image_number):
-                digit_, confidence_ = self.image_recognitor.recognize_single_seven_segment_digit(digit)
-                actual_number.add_digit(digit_, confidence_)
+            for digit_image in self.image_recognitor.find_all_digits_from_single_number(image_number):
+                digit, confidence = self.image_recognitor.recognize_single_seven_segment_digit(digit_image)
+                actual_number.add_digit(digit, confidence)
 
             actual_number.validate()
             assert_that(actual_number.number, equal_to(expected_number))
-"""
+
 
 if __name__ == "__main__":
     unittest.main()
