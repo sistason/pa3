@@ -127,14 +127,11 @@ class ImageRecognitor(AbstractImageRecognitor):
         #       from the borders of the image to the center, checking the
         #       requirements. Saves a findContours and a sort for few pixel
         #       checks.
-        image_thresholded = self.utils.threshold_image(single_number, k=7, brightness=-2)
+        image_thresholded = self.utils.threshold_image_simple(single_number)
         image_opened = self.utils.morph_open_image(image_thresholded, iterations=iterations)
 
-        y_max, y_min, _, x_max = self.utils.get_contour_values(image_opened)
+        y_max, y_min, _, x_max = self.utils.get_contour_values(image_opened, digits=3)
         image = image_opened[y_min:y_max, :]
-
-        self.utils.show_image([single_number, image_thresholded, image_opened, image, image[:, _:x_max]])
-        time.sleep(1)
 
         if not x_max or not y_max:
             return []
@@ -228,13 +225,10 @@ class ImageRecognitor(AbstractImageRecognitor):
 
     def recognize_single_seven_segment_digit(self, single_digit, iterations=0, debug=False):
 
-        image_thresholded = self.utils.threshold_image(single_digit)
+        image_thresholded = self.utils.threshold_image_simple(single_digit)
         image_opened = self.utils.morph_open_image(image_thresholded, iterations=iterations)
         y_max, y_min, _, x_max = self.utils.get_contour_values(image_opened)
         image = image_opened[y_min:y_max, :x_max]
-
-        # self.utils.show_image([single_digit, image_thresholded, image_opened, image])
-        # time.sleep(1)
 
         digit, confidence = self.get_digit_from_segments(image, image_thresholded)
         if digit == -1 and iterations <= 2:
@@ -293,8 +287,6 @@ class ImageRecognitor(AbstractImageRecognitor):
                        for ss_pos in seven_segment_positions_bool]
 
             if ratings.count(True) != 1:
-                print(segments)
-                print(ratings)
                 continue
 
             num = ratings.index(True)

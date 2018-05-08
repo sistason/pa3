@@ -34,9 +34,6 @@ class ImageRecognitionTUBShould(unittest.TestCase):
             numbers, type_ = filename.split('_', 1)
 
             expected = [int(number) for number in numbers.split(',')]
-            #if expected[0] != 388:
-            #    continue
-
             _c = {'ranges':[[i-10, i+10] for i in expected], 'current_numbers': [{'number': e} for e in expected], 'digits': 3}
 
             config = Configuration(_c)

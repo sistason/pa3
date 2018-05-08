@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import time
 import logging
 
 
@@ -67,7 +68,7 @@ class ImageRecognitionUtilities:
         return img
 
     @staticmethod
-    def threshold_image(image, k=1, brightness=-1):
+    def threshold_image(image, k=2):
         img = image.copy()
         cv2.normalize(image, img, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
         Z = img.reshape((-1, 1))
@@ -80,14 +81,20 @@ class ImageRecognitionUtilities:
         center = np.uint8(center)
         res = center[label.flatten()]
         kmeaned = res.reshape(img.shape)
-        brightness_numbers = np.max(kmeaned)
-        brightness_k = sorted(center)[brightness][0]
-        _, res2 = cv2.threshold(img, brightness_k, 255, 0)
-
-        ImageRecognitionUtilities.show_image([image, kmeaned, res2])
-        import time; time.sleep(3)
+        if k == 2:
+            thresh_brightness = sorted(center)[-1][0]
+        else:
+            thresh_brightness = sorted(center)[-2][0]
+        _, res2 = cv2.threshold(kmeaned, thresh_brightness, 255, 0)
 
         return res2
+
+    @staticmethod
+    def threshold_image_simple(image):
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) != 2 else image
+
+        return cv2.threshold(gray_image, 70, 255, 0)[1]
+
 
     @staticmethod
     def morph_open_image(image, iterations=1):
@@ -112,15 +119,14 @@ class ImageRecognitionUtilities:
 
         return conts_combined
 
-    def get_contour_values(self, image, strip_size=0):
+    def get_contour_values(self, image, digits=1):
         bot, top, left, right = 0, 0, 0, 0
         if len(image.shape) != 2:
             logging.warning('image was not thresholded before finding contours!')
             return bot, top, left, right
 
         height, width = image.shape
-        if not strip_size:
-            strip_size = int(height / 15)-1
+        strip_size = int((width / 9) / digits)
 
         conts_combined = self.get_set_pixels(image)
 
