@@ -22,11 +22,8 @@ deploy:
     - eval $(ssh-agent -s)
     - echo "$SSH_DEPLOY_PRIVATEKEY" | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
   script:
-    - cat ~/.ssh/known_hosts
-    - "ssh -oStrictHostKeyChecking=no pruefungsamt@130.149.246.208 touch foo"
-    - cat ~/.ssh/known_hosts
+    - "ssh pruefungsamt@130.149.246.208 touch foo"
 
