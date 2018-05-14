@@ -1,7 +1,7 @@
 ---
 - name: Install docker on all hosts
   hosts: web
-#  hosts: none
+#  hosts: all
   tasks:
     - include_tasks: src/playbook_install_docker.yml
 
@@ -23,7 +23,7 @@
     - include_tasks: src/pa3_frontend/playbook_tasks.yml
       vars:
         server_url: pa3.sistason.de
-        build_directory: /srv/pa3
+        build_directory: "/home/{{ ansible_user }}"
         #bind_ip: 172.31.37.208
         #bind_ip: 127.0.0.1
 
@@ -36,4 +36,4 @@
     - include_tasks: src/pa3_recognizer/playbook_tasks.yml
       vars:
         server_url: pa3.sistason.de
-        build_directory: /srv/pa3
+        build_directory: "/home/{{ ansible_user }}"

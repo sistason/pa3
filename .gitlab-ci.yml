@@ -15,6 +15,9 @@ test_recognition:
   #  - "python tests/test_whole_algorithm.py"
 
 deploy:
+  # On the machine deployed to should:
+  # - /srv/pa3 be user-writeable
+  # - sudo configured to allow apt-get
   stage: deploy
   image: williamyeh/ansible:debian9-onbuild
   before_script:
