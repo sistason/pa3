@@ -2,7 +2,6 @@
 # Adapted from nickjj/ansible-docker
 - name: Install Docker and role dependencies
   become: yes
-  become_method: sudo
   apt:
     name: "{{ item }}"
     state: "present"
