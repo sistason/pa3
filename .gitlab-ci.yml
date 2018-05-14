@@ -24,7 +24,7 @@ deploy:
     - mkdir -p ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
-    - ssh -o StrictHostKeyChecking=no pa3@130.149.233.83:23
+    - ssh -o StrictHostKeyChecking=no pa3@130.149.233.83 -p23
   script:
     - "ansible-playbook -i hosts playbook.yml"
 
