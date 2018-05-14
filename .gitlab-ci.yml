@@ -5,7 +5,7 @@ stages:
 
 build:
   stage: build
-  script: "echo This is python, no building here :)"
+  script: "echo This is python, no building here :\)"
 
 test_rec:
   stage: test
