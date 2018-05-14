@@ -1,5 +1,5 @@
 stages:
-  - test
+  #- test
   - deploy
 
 test_recognition:
@@ -24,6 +24,7 @@ deploy:
     - mkdir -p ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
+    - ssh -o StrictHostKeyChecking=no pa3@130.149.233.83:23
   script:
     - "ansible-playbook -i hosts playbook.yml"
 
