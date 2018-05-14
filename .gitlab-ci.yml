@@ -16,6 +16,15 @@ test_recognition:
 
 deploy:
   stage: deploy
+  environment: fluttershy_test
   image: ansible
-  script: "cat file1.txt file2.txt | gzip > packaged.gz"
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_DEPLOY_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "Host 130.149.246.208\n\tUser pa3" > ~/.ssh/config
+  script:
+    - "ssh 130.149.246.208 touch foo"
 
