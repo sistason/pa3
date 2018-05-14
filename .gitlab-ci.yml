@@ -6,10 +6,12 @@ test_rec:
   stage: test
   image: python:3
   before_script:
-    - "pip install -r src/pa3_recognizer/requirements.txt"
-    -
+    - "pip install -r src/pa3_recognizer/recognition/requirements.txt"
+
   script:
-    - "python src/pa3_recognizer/"
+    - "cd src/pa3_recognizer/recognition/"
+    - "python tests/testRecognitorTUB.py"
+    - "python tests/testWholeAlgorithm.py"
 
 deploy_web:
   stage: deploy
