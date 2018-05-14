@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from recognition.imagerecognition import AbstractImageRecognitor, AbstractNumber
+from imagerecognition import AbstractImageRecognitor, AbstractNumber
 
 import cv2
 import numpy as np

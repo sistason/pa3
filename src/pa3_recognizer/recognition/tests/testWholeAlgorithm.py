@@ -4,7 +4,7 @@ import os
 from base64 import b64encode
 from cv2 import imread
 
-from recognition.imagerecognitionTUB import ImageRecognitor
+from imagerecognitionTUB import ImageRecognitor
 from waitingnumberrecognition import Configuration
 
 

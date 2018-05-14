@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 from imagecreation import ImageCreator
-from recognition.imagerecognitionTUB import ImageRecognitor
+from imagerecognitionTUB import ImageRecognitor
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from recognition.imagerecognition_utilities import ImageRecognitionUtilities
+from imagerecognition_utilities import ImageRecognitionUtilities
 
 
 class AbstractNumber(object):

@@ -5,7 +5,7 @@ RUN mkdir -p /srv/pa3/current_images
 RUN mkdir -p /run/secrets/
 
 COPY recognizer_auth /run/secrets/
-COPY recognition_new/ /srv/pa3/recognition
+COPY recognition/ /srv/pa3/recognition
 
 RUN pip install -r /srv/pa3/recognition/requirements.txt
 

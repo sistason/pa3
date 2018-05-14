@@ -1,19 +1,15 @@
 stages:
-  - build
   - test
   - deploy
 
-build:
-  stage: build
-  script: "echo This is python, no building here"
-
 test_rec:
   stage: test
-  image: python3
+  image: python:3
   before_script:
-    - apt-get -y install python3-opencv python3-requests
+    - "pip install -r src/pa3_recognizer/requirements.txt"
+    -
   script:
-    - "cat file1.txt file2.txt | grep -q 'Hello world'"
+    - "python src/pa3_recognizer/"
 
 deploy_web:
   stage: deploy

@@ -1,7 +1,7 @@
 import unittest
 from hamcrest import *
 
-from recognition.imagerecognitionTUB import Number
+from imagerecognitionTUB import Number
 
 
 class NumberShould(unittest.TestCase):

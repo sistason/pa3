@@ -5,7 +5,7 @@ from hamcrest import *
 import os
 from base64 import b64encode
 
-from recognition.imagerecognitionTUB import ImageRecognitor, Number
+from imagerecognitionTUB import ImageRecognitor, Number
 from waitingnumberrecognition import Configuration
 
 
