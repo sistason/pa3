@@ -18,12 +18,12 @@ deploy:
   stage: deploy
   image: williamyeh/ansible:mini-debian9
   before_script:
-    - 'which ssh-agent || ( apt-get -qq update -y && apt-get -qq install openssh-client -y )'
+    - 'apt-get -qq update -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-client -y &>/dev/null'
     - eval $(ssh-agent -s)
     - echo "$SSH_DEPLOY_PRIVATEKEY" | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
   script:
-    - "ssh pruefungsamt@130.149.246.208 touch foo"
+    - "ansible-playbook -i hosts playbook.yml"
 
