@@ -1,6 +1,7 @@
 ---
 # Create web network, for better firewalling comfortability 
 - name: Create network
+  become: yes
   docker_network:
     name: pa3_net
     driver: bridge
@@ -71,6 +72,7 @@
 #    group: 999
 
 - name: Start mysql container
+  become: yes
   docker_container:
     name: pa3_mysql
     hostname: pa3_mysql
@@ -97,6 +99,7 @@
     state: "directory"
 
 - name: Start letsencrypt proxy container
+  become: yes
   docker_container:
     name: pa3_proxy
     image: pa3_proxy
@@ -108,6 +111,7 @@
 
 
 - name: Start frontend container
+  become: yes
   docker_container:
     name: pa3_frontend
     hostname: pa3_frontend

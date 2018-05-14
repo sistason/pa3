@@ -14,6 +14,7 @@
   command: docker build -t pa3_recognizer:latest -f "{{ build_directory }}/pa3_recognizer/Dockerfile_recognizer" "{{ build_directory }}/pa3_recognizer"
 
 - name: Start the recognizer container on the host
+  become: yes
   docker_container:
     name: pa3_recognizer
     hostname: "pa3_{{ inventory_hostname }}"
