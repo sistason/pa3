@@ -16,15 +16,16 @@ test_recognition:
 
 deploy:
   stage: deploy
-  environment: fluttershy_test
-  image: ansible
+  image: williamyeh/ansible:mini-debian9
   before_script:
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
     - eval $(ssh-agent -s)
-    - echo "$SSH_DEPLOY_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - echo "$SSH_DEPLOY_PRIVATEKEY" | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "Host 130.149.246.208\n\tUser pa3" > ~/.ssh/config
+    - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
   script:
     - "ssh 130.149.246.208 touch foo"
 
