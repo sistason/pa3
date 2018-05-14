@@ -2,21 +2,19 @@ stages:
   - test
   - deploy
 
-test_rec:
+test_recognition:
   stage: test
-  image: python:3
+  image: python:3.6
   before_script:
     - "pip install -r src/pa3_recognizer/recognition/requirements.txt"
-
   script:
     - "cd src/pa3_recognizer/recognition/"
-    - "python tests/testRecognitorTUB.py"
-    - "python tests/testWholeAlgorithm.py"
+    - "python tests/test_number.py"
+    - "python tests/test_digits_numbers.py"
+    - "python tests/test_whole_algorithm.py"
 
-deploy_web:
+deploy:
   stage: deploy
+  image: ansible
   script: "cat file1.txt file2.txt | gzip > packaged.gz"
 
-deploy_rec:
-  stage: deploy
-  script: "echo TODO"

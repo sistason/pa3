@@ -24,4 +24,5 @@
     env:
       SERVER_URL: "{{ server_url }}"
       CAMERA: 0
+      PYTHONPATH: "/srv/pa3/recognition"
 
