@@ -53,9 +53,11 @@
 # Build containers
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Build frontend
+  become: yes
   command: "docker build -t pa3_frontend:latest -f {{ build_directory }}/pa3_frontend/Dockerfile_frontend {{ build_directory }}"
 
 - name: Build proxy
+  become: yes
   command: "docker build -t pa3_proxy:latest -f {{ build_directory }}/pa3_proxy/Dockerfile_proxy {{ build_directory }}/pa3_proxy"
 
 # Start web containers

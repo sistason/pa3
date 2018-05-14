@@ -11,6 +11,7 @@
 
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Build recognizer
+  become: yes
   command: docker build -t pa3_recognizer:latest -f "{{ build_directory }}/pa3_recognizer/Dockerfile_recognizer" "{{ build_directory }}/pa3_recognizer"
 
 - name: Start the recognizer container on the host
