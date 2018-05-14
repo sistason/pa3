@@ -11,6 +11,7 @@
     - "ca-certificates"
     - "software-properties-common"
     - "python-docker"
+    - "rsync"
 
 - name: Get upstream APT GPG key
   become: yes
