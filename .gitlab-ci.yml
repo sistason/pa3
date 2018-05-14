@@ -9,6 +9,7 @@ test_recognition:
     - "pip install -r src/pa3_recognizer/recognition/requirements.txt"
   script:
     - "cd src/pa3_recognizer/recognition/"
+    - "export PYTHONPATH=src/pa3_recognizer/recognition"
     - "python tests/test_number.py"
     - "python tests/test_digits_numbers.py"
     - "python tests/test_whole_algorithm.py"
