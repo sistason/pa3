@@ -18,15 +18,15 @@ deploy:
   stage: deploy
   image: williamyeh/ansible:mini-debian9
   before_script:
-    - 'which ssh-agent || ( apt-get -q update -y && apt-get -q install openssh-client -y )'
+    - 'which ssh-agent || ( apt-get -qq update -y && apt-get -q install openssh-client -y )'
     - eval $(ssh-agent -s)
     - echo "$SSH_DEPLOY_PRIVATEKEY" | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "Host 130.149.246.208\n\tUser pa3" > ~/.ssh/config
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
     - cat ~/.ssh/known_hosts
-    - "ssh 130.149.246.208 touch foo"
+    - "ssh -oStrictHostKeyChecking=no pa3@130.149.246.208 touch foo"
+    - cat ~/.ssh/known_hosts
 
