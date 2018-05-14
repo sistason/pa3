@@ -16,7 +16,7 @@ test_recognition:
 
 deploy:
   stage: deploy
-  image: williamyeh/ansible:mini-debian9
+  image: williamyeh/ansible:debian9-onbuild
   before_script:
     - 'apt-get -qq update -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-client -y &>/dev/null'
     - eval $(ssh-agent -s)
