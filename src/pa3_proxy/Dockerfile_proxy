@@ -6,5 +6,7 @@ COPY entrypoint.sh /root/
 
 RUN mkdir -p /var/www/letsencrypt
 
+EXPOSE 80
+
 ENTRYPOINT [ "/bin/bash", "/root/entrypoint.sh" ]
 CMD [ "/bin/bash" ]

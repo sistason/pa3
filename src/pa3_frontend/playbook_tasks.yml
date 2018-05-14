@@ -39,10 +39,10 @@
     src: src/pa3_proxy/proxy.conf.j2
     dest: "{{ build_directory }}/pa3_proxy/proxy.conf"
 
-#- name: Copy necessary secrets
-#  synchronize:
-#    src: data/secrets
-#    dest: "{{ build_directory }}/"
+- name: Copy necessary secrets
+  synchronize:
+    src: data/secrets
+    dest: "{{ build_directory }}/"
 
 - name: Copy .dockerignore
   synchronize:
@@ -103,8 +103,6 @@
     command: "{{ server_url }}"
     networks:
       - name: "pa3_net"
-    ports:
-        - "{{ bind_ip }}:80:80"
     volumes:
       - "{{ build_directory }}/letsencrypt:/etc/letsencrypt:rw"
 
@@ -117,11 +115,6 @@
     state: started
     networks:
       - name: "pa3_net"
-    ports:
-      - "{{ bind_ip }}:443:443"
     volume_driver: bind
     volumes:
       - "{{ build_directory }}/letsencrypt/archive:/etc/apache2/ssl:rw"
-      # TODO: remove in production. For coding without compiling first
-      - "/home/sistason/skriptecke/pa3/src/pa3_frontend/pa3_django:/srv/pa3_django:rw"
-
