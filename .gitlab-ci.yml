@@ -15,9 +15,6 @@ test_recognition:
   #  - "python tests/test_whole_algorithm.py"
 
 deploy:
-  # On the machine deployed to should:
-  # - /srv/pa3 be user-writeable
-  # - sudo configured to allow apt-get
   stage: deploy
   image: williamyeh/ansible:debian9-onbuild
   before_script:
@@ -27,7 +24,8 @@ deploy:
     - mkdir -p ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
-    - ssh -o StrictHostKeyChecking=no pa3@130.149.233.83 -p23
+    # TODO: temporary for getting the hostkeys for servers this is tested on
+    - ssh -o StrictHostKeyChecking=no -q pa3@130.149.233.83 -p23
   script:
     - "ansible-playbook -v -i hosts playbook.yml"
 
