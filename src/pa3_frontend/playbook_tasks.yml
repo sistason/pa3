@@ -1,5 +1,5 @@
 ---
-# Create web network, for better firewalling comfortability 
+# Create web network, for better firewalling comfortability. Don't forget to actually configure your fw for this!
 - name: Create network
   become: yes
   docker_network:
@@ -84,7 +84,7 @@
       - name: "pa3_net"
     volumes:
       - "{{ build_directory }}/mysql:/var/lib/mysql:rw"
-      - "{{ build_directory }}/secrets/mysql_root_password:/run/secrets/mysql_root_password:rw"
+      - "{{ build_directory }}/secrets/mysql_root_password:/run/secrets/mysql_root_password:ro"
     env:
       MYSQL_DATABASE: "pa3_django"
       MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/mysql_root_password"
@@ -111,6 +111,10 @@
     volumes:
       - "{{ build_directory }}/letsencrypt:/etc/letsencrypt:rw"
 
+- name: Wait for the certificate build by the proxy
+  wait_for:
+    path: "{{ build_directory}}/letsencrypt/archive/{{ server_url }}"
+    timeout: 60
 
 - name: Start frontend container
   become: yes

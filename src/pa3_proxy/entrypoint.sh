@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 if [[ $1 == "/bin/bash" || $1 == "bash" ]]; then 
     exec "$@"

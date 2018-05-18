@@ -1,4 +1,3 @@
-#FROM rickryan/rpi-jessie-opencv3.2
 FROM python:3.6
 
 RUN mkdir -p /srv/pa3/current_images
