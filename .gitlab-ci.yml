@@ -25,7 +25,7 @@ deploy:
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
     # TODO: temporary for getting the hostkeys for servers this is tested on
-    - ssh -o StrictHostKeyChecking=no -q pa3@130.149.233.83 -p23
+    - ssh -o StrictHostKeyChecking=no -q pa3@130.149.233.83 -p23 &>/dev/null
   script:
     - "ansible-playbook -v -i hosts playbook.yml"
 
