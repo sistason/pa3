@@ -8,7 +8,7 @@
     driver_options:
       com.docker.network.bridge.name: pa3-docker-br
     ipam_options:
-      subnet: '172.31.0.0/28'
+      subnet: '172.30.0.0/28'
 
 # Copy src
 - name: create pa3 directory
