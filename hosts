@@ -1,6 +1,6 @@
 # User on the machine deployed to should be able to sudo without password
 
-web             ansible_host=130.149.233.83 ansible_user=pa3 ansible_port=23
+web             ansible_host=52.59.225.193 ansible_user=pa3
 
 [recognizers]
 recognizer_pa_10    ansible_host=130.149.233.82 ansible_user=pa3 ansible_port=23
