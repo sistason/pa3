@@ -73,6 +73,11 @@
 #    owner: 999
 #    group: 999
 
+- name: Chown mysql-secret
+  file:
+    path: "{{ build_directory }}/secrets/mysql_root_password"
+    mode: "u+r,g+r,o+r"
+
 - name: Start mysql container
   become: yes
   docker_container:
@@ -115,7 +120,7 @@
   become: yes
   wait_for:
     path: "{{ build_directory}}/letsencrypt/archive/{{ server_url }}"
-    timeout: 6000
+    timeout: 60
 
 - name: Start frontend container
   become: yes
