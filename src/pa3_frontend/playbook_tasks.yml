@@ -78,7 +78,7 @@
   docker_container:
     name: pa3_mysql
     hostname: pa3_mysql
-    image: hypriot/rpi-mysql
+    image: mysql
     state: started
     networks:
       - name: "pa3_net"
