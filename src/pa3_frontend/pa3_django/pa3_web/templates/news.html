@@ -1,0 +1,32 @@
+{% load i18n %}
+
+<div id="fr_frame">
+{% if news.fr_error %}
+    <p class="framehead">{% trans news.fr_error|safe %}</p>
+{% else %}
+
+    <p class="framehead">
+        <u>{% trans "News from the Freitagsrunde" %}</u><br />
+        {{ news.fr_news.title }}
+    </p>
+    <p class="framecontent">
+        {{ news.fr_news.content|safe }}
+    </p>
+{% endif %}
+</div>
+
+<div id="pa_frame">
+{% if news.pa_error %}
+    <p class="framehead">{% trans news.pa_error|safe %}</p>
+{% else %}
+    <p class="framehead">
+        <u>{% trans "News from the examination office" %}</u><br />
+        {{ news.pa_news.title }}
+    </p>
+    <p class="framecontent">
+        {{ news.pa_news.content|safe }}
+    </p>
+{% endif %}
+</div>
+
+<div style="clear:both;"></div>

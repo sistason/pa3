@@ -20,7 +20,7 @@ deploy:
   before_script:
     - 'apt-get -qq update -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-client rsync -y &>/dev/null'
     - eval $(ssh-agent -s)
-    - echo "$SSH_DEPLOY_PRIVATEKEY" | tr -d '\r' | ssh-add - > /dev/null
+    - echo -n "$SSH_DEPLOY_PRIVATEKEY"| ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh

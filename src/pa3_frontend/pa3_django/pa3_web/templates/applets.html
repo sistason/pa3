@@ -1,0 +1,45 @@
+{% load i18n %}
+{% load static %}
+{% load pa3_openings %}
+
+<div class="opening">
+    <h2>{% trans "Opening Hours" %}</h2>
+
+    {% autoescape off %}
+    <dl>
+        {% for op in openings %}
+            {% pa_openings op %}
+        {% endfor %}
+    </dl>
+    {% endautoescape %}
+</div>
+
+<br />
+
+<div class=subscribe-box>
+    <h2>{% trans "Subscription" %}</h2>
+
+    <div class=subscription>
+        <span id="subscription-response"></span>
+        <form action="/subscribe" method="GET" class="subscription-form">
+            <input name="protocols" type="radio" value="Browser" checked />Browser
+<!--            <input name="protocols" type="radio" value="SMS" />SMS-->
+            <input name="identifier" type="text" placeholder="{% trans "Address" %}"
+                   id="subscription-identifier" hidden />
+            <input name="number" type="text" placeholder="{% trans "Number" %}" id="subscription-number" />
+            <input name="buffer" type="text" placeholder="{% trans "Notice before" %} (5)" id="subscription-buffer" />
+            <label for="subscription-src">{% trans "Office" %}: </label>
+            <select name="src" id="subscription-src">
+            </select>
+            <input type=submit value={% trans "Subscribe" %} />
+        </form>
+    </div>
+</div>
+
+<br />
+
+<div class="logo">
+    <a href="http://wiki.freitagsrunde.org">
+        <img src="{%  static "pa3_web/img/frunde_logo.png" %}">
+    </a>
+</div>
