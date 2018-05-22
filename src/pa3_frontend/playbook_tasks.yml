@@ -87,6 +87,11 @@
     secret_data_django_secret_key: "{{ lookup('password', 'secrets/django_secret_key length=32') }}"
     secret_data_recognizer_auth: "{{ lookup('password', 'secrets/recognizer_auth length=32') }}"
 
+- name: Copy secrets again to have them with content now. Thank you password-lookups only working on localhost
+  synchronize:
+    src: secrets
+    dest: "{{ build_directory }}/"
+
 # Build containers
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Copy .dockerignore

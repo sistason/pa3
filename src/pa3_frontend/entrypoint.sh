@@ -12,5 +12,7 @@ python3 "${project_directory}/pa3_django/manage.py" migrate
 echo "Start cron"
 /usr/sbin/cron
 
+export
+
 echo "Start Apache2"
 /usr/sbin/apache2ctl -D FOREGROUND
