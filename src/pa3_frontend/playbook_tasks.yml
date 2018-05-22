@@ -112,6 +112,7 @@
       - "{{ build_directory }}/letsencrypt:/etc/letsencrypt:rw"
 
 - name: Wait for the certificate build by the proxy
+  become: yes
   wait_for:
     path: "{{ build_directory}}/letsencrypt/archive/{{ server_url }}"
     timeout: 6000
