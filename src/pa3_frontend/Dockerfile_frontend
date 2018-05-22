@@ -27,5 +27,8 @@ RUN touch /var/log/django_debug.log; chmod 777 /var/log/django_debug.log
 COPY pa3_frontend/pa3_django /srv/pa3_django
 
 COPY pa3_frontend/entrypoint.sh /srv/pa3_entrypoint.sh
+
+ENV PYTHONPATH /srv/pa3_django/:/usr/local/lib/python3.6/site-packages
+
 WORKDIR /srv/pa3_django
 ENTRYPOINT ["/bin/bash", "/srv/pa3_entrypoint.sh"]
