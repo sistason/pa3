@@ -40,18 +40,59 @@
     src: src/pa3_proxy/proxy.conf.j2
     dest: "{{ build_directory }}/pa3_proxy/proxy.conf"
 
-- name: Copy necessary secrets
-  synchronize:
-    src: data/secrets
-    dest: "{{ build_directory }}/"
+# --- Create secrets ---
+- name: create secrets directory
+  file:
+    path: "{{ build_directory }}/secrets"
+    state: directory
 
+- name: secret_path_mysql_root_password exists?
+  stat:
+    path: "{{ build_directory }}/secrets/mysql_root_password"
+  register: exists
+- name: delete pw file if empty, as the lookup_password uses an empty pw otherwise
+  when: exists.stat.size is defined and exists.stat.size < 4
+  file:
+    path: "{{ build_directory }}/secrets/mysql_root_password"
+    state: absent
+
+- name: secret_path_django_secret_key exists?
+  stat:
+    path: "{{ build_directory }}/secrets/django_secret_key"
+  register: exists
+- name: delete pw file if empty, as the lookup_password uses an empty pw otherwise
+  when: exists.stat.size is not defined or exists.stat.size < 4
+  file:
+    path: "{{ build_directory }}/secrets/django_secret_key"
+    state: absent
+
+- name: secret_path_recognizer_auth exists?
+  stat:
+    path: "{{ build_directory }}/secrets/recognizer_auth"
+  register: exists
+- name: delete pw file if empty, as the lookup_password uses an empty pw otherwise
+  when: exists.stat.size is not defined or exists.stat.size < 4
+  file:
+    path: "{{ build_directory }}/secrets/recognizer_auth"
+    state: absent
+
+- set_fact:
+    secret_data_mysql_root_password: "{{ lookup('password', build_directory + '/secrets/mysql_root_password length=32') }}"
+    secret_data_django_secret_key: "{{ lookup('password', build_directory + '/secrets/django_secret_key length=32') }}"
+    secret_data_recognizer_auth: "{{ lookup('password', build_directory + '/secrets/recognizer_auth length=32') }}"
+
+- name: Copy secrets to localhost for the next playbooks
+  fetch:
+    src: "{{ build_directory }}/secrets"
+    dest: "."
+
+# Build containers
+# Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Copy .dockerignore
   synchronize:
     src: .dockerignore
     dest: "{{ build_directory }}/"
 
-# Build containers
-# Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Build frontend
   become: yes
   command: "docker build -t pa3_frontend:latest -f {{ build_directory }}/pa3_frontend/Dockerfile_frontend {{ build_directory }}"
@@ -66,18 +107,6 @@
     path: "{{ build_directory }}/mysql"
     state: "directory"
 
-#- name: chown the secret to mysql (999), as it gets rsynced and has unknown permissions
-#   become_user: root
-#  file:
-#    path: "{{ build_directory }}/secrets/mysql_root_password"
-#    owner: 999
-#    group: 999
-
-- name: Chown mysql-secret
-  file:
-    path: "{{ build_directory }}/secrets/mysql_root_password"
-    mode: "u+r,g+r,o+r"
-
 - name: Start mysql container
   become: yes
   docker_container:
@@ -90,10 +119,9 @@
         ipv4_address: "{{ subnet }}.3"
     volumes:
       - "{{ build_directory }}/mysql:/var/lib/mysql:rw"
-      - "{{ build_directory }}/secrets/mysql_root_password:/run/secrets/mysql_root_password:ro"
     env:
       MYSQL_DATABASE: "pa3_django"
-      MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/mysql_root_password"
+      MYSQL_ROOT_PASSWORD: "{{ secret_data_mysql_root_password}} "
   register: mysql_container
 
 - name: Wait for the mysql-container to be up and to have build the database
