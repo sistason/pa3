@@ -24,8 +24,7 @@
       vars:
         server_url: pa3.sistason.de
         build_directory: "/home/{{ ansible_user }}"
-        #bind_ip: 172.31.37.208
-        #bind_ip: 127.0.0.1
+        subnet: 172.30.0
 
 
 - name: Synchronize, build and run recognizer-containers on the recognizers
