@@ -87,7 +87,7 @@
     state: started
     networks:
       - name: "pa3_net"
-        ipv4_address: {{ subnet }}.3
+        ipv4_address: "{{ subnet }}.3"
     volumes:
       - "{{ build_directory }}/mysql:/var/lib/mysql:rw"
       - "{{ build_directory }}/secrets/mysql_root_password:/run/secrets/mysql_root_password:ro"
@@ -114,7 +114,7 @@
     command: "{{ server_url }}"
     networks:
       - name: "pa3_net"
-        ipv4_address: {{ subnet }}.2
+        ipv4_address: "{{ subnet }}.2"
     volumes:
       - "{{ build_directory }}/letsencrypt:/etc/letsencrypt:rw"
 
@@ -133,7 +133,7 @@
     state: started
     networks:
       - name: "pa3_net"
-        ipv4_address: {{ subnet }}.4
+        ipv4_address: "{{ subnet }}.4"
     volume_driver: bind
     volumes:
       - "{{ build_directory }}/letsencrypt/archive:/etc/apache2/ssl:rw"
