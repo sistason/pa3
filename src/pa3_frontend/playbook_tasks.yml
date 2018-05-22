@@ -76,16 +76,16 @@
     path: "{{ build_directory }}/secrets/recognizer_auth"
     state: absent
 
-- set_fact:
-    secret_data_mysql_root_password: "{{ lookup('password', build_directory + '/secrets/mysql_root_password length=32') }}"
-    secret_data_django_secret_key: "{{ lookup('password', build_directory + '/secrets/django_secret_key length=32') }}"
-    secret_data_recognizer_auth: "{{ lookup('password', build_directory + '/secrets/recognizer_auth length=32') }}"
-
-- name: Copy secrets to localhost for the next playbooks
+- name: Copy secrets to localhost for the next playbooks and for the password-lookup
   synchronize:
     mode: pull
     src: "{{ build_directory }}/secrets"
     dest: "."
+
+- set_fact:
+    secret_data_mysql_root_password: "{{ lookup('password', 'mysql_root_password length=32') }}"
+    secret_data_django_secret_key: "{{ lookup('password', 'django_secret_key length=32') }}"
+    secret_data_recognizer_auth: "{{ lookup('password', 'recognizer_auth length=32') }}"
 
 # Build containers
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
@@ -122,7 +122,7 @@
       - "{{ build_directory }}/mysql:/var/lib/mysql:rw"
     env:
       MYSQL_DATABASE: "pa3_django"
-      MYSQL_ROOT_PASSWORD: "{{ secret_data_mysql_root_password}} "
+      MYSQL_ROOT_PASSWORD: "{{ secret_data_mysql_root_password }}"
   register: mysql_container
 
 - name: Wait for the mysql-container to be up and to have build the database
