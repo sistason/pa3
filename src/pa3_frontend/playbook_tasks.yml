@@ -82,7 +82,8 @@
     secret_data_recognizer_auth: "{{ lookup('password', build_directory + '/secrets/recognizer_auth length=32') }}"
 
 - name: Copy secrets to localhost for the next playbooks
-  fetch:
+  synchronize:
+    mode: pull
     src: "{{ build_directory }}/secrets"
     dest: "."
 
