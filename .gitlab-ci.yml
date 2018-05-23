@@ -5,8 +5,8 @@ variables:
   REC_23: "130.149.233.84"
 
 stages:
-#  - test
-#  - deploy_web
+  - test
+  - deploy_web
   - deploy_rec
 
 test_recognition:
@@ -20,6 +20,8 @@ test_recognition:
     - "python tests/test_number.py"
     - "python tests/test_digits_numbers.py"
     - "python tests/test_whole_algorithm.py"
+  except:
+    - master
 
 deploy_web:
   stage: deploy_web
@@ -36,6 +38,8 @@ deploy_web:
     - echo "web    ansible_host=$WEB ansible_user=pa3" > hosts_web
   script:
     - "ansible-playbook -v -i hosts_web playbook.yml"
+  except:
+    - master
 
 deploy_rec:
   # The recognitors get their config from the webserver, so run this only after the web-deployment
