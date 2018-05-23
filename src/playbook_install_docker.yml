@@ -42,6 +42,29 @@
     update_cache: True
     install_recommends: False
     cache_valid_time: "86400"
+  register: docker_installed
 
+- name: Configure Docker - disable iptables and shorten docker0-ip-range
+  become: yes
+  file:
+    path: "/etc/docker/daemon.json"
+    state: present
+    create: yes
+  #when: docker_installed.changed
 
+- name: Configure Docker - disable iptables
+  become: yes
+  lineinfile:
+    path: "/etc/docker/daemon.json"
+    regexp: '"iptables":[^,]*(,)?'
+    line: '"iptables": false\1'
+  #when: docker_installed.changed
+
+- name: Configure Docker - shorten docker0-ip-range
+  become: yes
+  lineinfile:
+    path: "/etc/docker/daemon.json"
+    regexp: '"bip":[^,]*(,)?'
+    line: '"bip": "172.16.0.1/24"\1'
+  #when: docker_installed.changed
 

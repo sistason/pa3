@@ -47,5 +47,3 @@ Please see the READMEs in the respective source directories.
 
 ## TODOs:
 - subscription via SMS?
-- recognition tests
-- gitlab CI deployment
