@@ -1,7 +1,8 @@
 FROM python:3.6
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 apache2-utils libapache2-mod-wsgi-py3 vim
+# Apache2-dev needed for mod_wsgi compilation by pip to get mod_wsgi for  3.6, not the 3.4 of debian
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 apache2-utils apache2-dev
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y cron vim
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales gettext
 RUN sed -i -e 's/# de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -18,6 +19,7 @@ COPY pa3_frontend/requirements.txt /root
 RUN pip3 install -r /root/requirements.txt
 
 COPY pa3_frontend/apache2-site.conf /etc/apache2/sites-enabled/000-default.conf
+RUN mod_wsgi-express module-config | head -n1 >> /etc/apache2/apache2.conf
 RUN mkdir -p /etc/apache2/ssl
 RUN a2enmod ssl
 EXPOSE 443
@@ -27,8 +29,6 @@ RUN touch /var/log/django_debug.log; chmod 777 /var/log/django_debug.log
 COPY pa3_frontend/pa3_django /srv/pa3_django
 
 COPY pa3_frontend/entrypoint.sh /srv/pa3_entrypoint.sh
-
-ENV PYTHONPATH /srv/pa3_django/:/usr/local/lib/python3.6/site-packages
 
 WORKDIR /srv/pa3_django
 ENTRYPOINT ["/bin/bash", "/srv/pa3_entrypoint.sh"]
