@@ -54,12 +54,10 @@ deploy_rec:
     - echo "$SSH_DEPLOY_HOSTKEY_REC_10" >> ~/.ssh/known_hosts
     - echo "$SSH_DEPLOY_HOSTKEY_REC_23" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
-    #- ssh -o StrictHostKeyChecking=no pa3@$REC_02 -p23
     - ssh -o StrictHostKeyChecking=no -q pa3@$REC_10 -p23 &>/dev/null
     - ssh -o StrictHostKeyChecking=no -q pa3@$REC_23 -p23 &>/dev/null
     - cat ~/.ssh/known_hosts
     - echo "[recognizers]\n \
-        #recognizer_pa_02    ansible_host=$REC_02 ansible_user=pa3 ansible_port=23\n \
         recognizer_pa_10    ansible_host=$REC_10 ansible_user=pa3 ansible_port=23\n \
         recognizer_pa_23    ansible_host=$REC_23 ansible_user=pa3 ansible_port=23" > hosts_rec
 
