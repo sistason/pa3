@@ -48,8 +48,7 @@
   become: yes
   file:
     path: "/etc/docker/daemon.json"
-    state: present
-    create: yes
+    state: touch
   #when: docker_installed.changed
 
 - name: Configure Docker - disable iptables
