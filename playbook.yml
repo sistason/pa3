@@ -1,7 +1,6 @@
 ---
 - name: Install docker on all hosts
-  hosts: web
-#  hosts: all
+  hosts: all
   tasks:
     - include_tasks: src/playbook_install_docker.yml
 
@@ -17,9 +16,7 @@
 
 
 - name: Synchronize, build and run recognizer-containers on the recognizers
-#  hosts: recognizers
-  hosts: none
-  connection: local
+  hosts: recognizers
   tasks:
     - include_tasks: src/pa3_recognizer/playbook_tasks.yml
       vars:

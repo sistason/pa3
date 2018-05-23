@@ -4,15 +4,15 @@ stages:
 
 test_recognition:
   stage: test
-  #image: python:3.6
+  image: python:3.6
   before_script:
-  #  - "pip -q install -r src/pa3_recognizer/recognition/requirements.txt"
+    - "pip -q install -r src/pa3_recognizer/recognition/requirements.txt"
   script:
     - "cd src/pa3_recognizer/recognition/"
-  #  - "export PYTHONPATH=$(pwd)"
-  #  - "python tests/test_number.py"
-  #  - "python tests/test_digits_numbers.py"
-  #  - "python tests/test_whole_algorithm.py"
+    - "export PYTHONPATH=$(pwd)"
+    - "python tests/test_number.py"
+    - "python tests/test_digits_numbers.py"
+    - "python tests/test_whole_algorithm.py"
 
 deploy:
   stage: deploy
@@ -26,6 +26,9 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
     # TODO: temporary for getting the hostkeys for servers this is tested on
     - ssh -o StrictHostKeyChecking=no -q pa3@52.59.225.193 &>/dev/null
+    - ssh -o StrictHostKeyChecking=no -q pa3@130.149.233.82 -p23 &>/dev/null
+    - ssh -o StrictHostKeyChecking=no -q pa3@130.149.233.84 -p23 &>/dev/null
+    - ssh -o StrictHostKeyChecking=no -q pa3@130.149.233.85 -p23 &>/dev/null
   script:
     - "ansible-playbook -v -i hosts playbook.yml"
 
