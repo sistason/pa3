@@ -5,8 +5,8 @@ variables:
   REC_23: "130.149.233.84"
 
 stages:
-  - test
-  - deploy_web
+#  - test
+#  - deploy_web
   - deploy_rec
 
 test_recognition:
