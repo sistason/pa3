@@ -8,6 +8,10 @@
 - name: Synchronize, build and run containers on the webhost
   hosts: web
   tasks:
+    - include_tasks: src/pa3_frontend/playbook_tasks_get_secrets.yml
+      vars:
+        build_directory: "/home/{{ ansible_user }}"
+
     - include_tasks: src/pa3_frontend/playbook_tasks.yml
       vars:
         server_url: pa3.sistason.de

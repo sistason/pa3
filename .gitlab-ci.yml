@@ -38,6 +38,12 @@ deploy_web:
     - echo "web    ansible_host=$WEB ansible_user=pa3" > hosts_web
   script:
     - "ansible-playbook -v -i hosts_web playbook.yml"
+  artifacts:
+    name: secrets
+    paths:
+    - secrets
+    when: always
+    expire_in: 30 min
 
 deploy_rec:
   # The recognitors get their config from the webserver, so run this only after the web-deployment
