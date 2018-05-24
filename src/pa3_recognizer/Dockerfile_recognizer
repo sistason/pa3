@@ -8,4 +8,4 @@ COPY recognition/ /srv/pa3/recognition
 
 RUN pip install -r /srv/pa3/recognition/requirements.txt
 
-CMD ["python", "/srv/pa3/recognition/paProj.py"]
+CMD ["python", "/srv/pa3/recognition/waitingnumberrecognition.py"]

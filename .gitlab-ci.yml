@@ -1,13 +1,6 @@
-variables:
-  WEB: "52.59.225.193"
-  REC_02: "130.149.233.85"
-  REC_10: "130.149.233.82"
-  REC_23: "130.149.233.84"
-
 stages:
   - test
-  - deploy_web
-  - deploy_rec
+  - deploy
 
 test_recognition:
   stage: test
@@ -24,49 +17,16 @@ test_recognition:
     - master
 
 deploy_web:
-  stage: deploy_web
+  stage: deploy
   image: williamyeh/ansible:debian9-onbuild
   before_script:
-    - 'apt-get -qq update -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-client rsync -y &>/dev/null'
-    - eval $(ssh-agent -s)
-    - echo -n "$SSH_DEPLOY_PRIVATEKEY"| ssh-add - > /dev/null
+    - DEBIAN_FRONTEND=noninteractive apt-get install -qq -y rsync openssh-client &>/dev/null
     - mkdir -p ~/.ssh
+    - echo -n "$SSH_DEPLOY_PRIVATEKEY" > ~/.ssh/ssh_private_key
     - echo "$SSH_DEPLOY_HOSTKEY_WEB" > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
-    # TODO: temporary for getting the hostkeys for servers this is tested on
-    - ssh -o StrictHostKeyChecking=no -q pa3@$WEB &>/dev/null
-    - echo "web    ansible_host=$WEB ansible_user=pa3" > hosts_web
-  script:
-    - "ansible-playbook -v -i hosts_web playbook.yml"
-  artifacts:
-    name: secrets
-    paths:
-    - secrets
-    when: always
-    expire_in: 30 min
-
-deploy_rec:
-  # The recognitors get their config from the webserver, so run this only after the web-deployment
-  stage: deploy_rec
-  image: williamyeh/ansible:debian9-onbuild
-  before_script:
-    - 'apt-get -qq update -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install openssh-client rsync -y &>/dev/null'
-    - eval $(ssh-agent -s)
-    - echo -n "$SSH_DEPLOY_PRIVATEKEY"| ssh-add - > /dev/null
-    - mkdir -p ~/.ssh
     - echo "$SSH_DEPLOY_HOSTKEY_REC_02" >> ~/.ssh/known_hosts
     - echo "$SSH_DEPLOY_HOSTKEY_REC_10" >> ~/.ssh/known_hosts
     - echo "$SSH_DEPLOY_HOSTKEY_REC_23" >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh
-    - ssh -o StrictHostKeyChecking=no -q pa3@$REC_02 -p23 &>/dev/null || true
-    - ssh -o StrictHostKeyChecking=no -q pa3@$REC_10 -p23 &>/dev/null
-    - cat ~/.ssh/known_hosts
-    - ssh -o StrictHostKeyChecking=no -q pa3@$REC_23 -p23 &>/dev/null
-    - echo "[recognizers]" > hosts_rec
-    - echo "   recognizer_pa_02    ansible_host=$REC_02 ansible_user=pa3 ansible_port=23" >> hosts_rec
-    - echo "   recognizer_pa_10    ansible_host=$REC_10 ansible_user=pa3 ansible_port=23" >> hosts_rec
-    - echo "   recognizer_pa_23    ansible_host=$REC_23 ansible_user=pa3 ansible_port=23" >> hosts_rec
-
+    - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh ~/.ssh/ssh_private_key
   script:
-    - "ansible-playbook -v -i hosts_rec playbook.yml"
-
+    - ansible-playbook -v -i ansible/hosts ansible/site.yml

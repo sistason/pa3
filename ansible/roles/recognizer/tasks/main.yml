@@ -1,12 +1,14 @@
 ---
 - name: Copy pa3_recognizer src to the host
   synchronize:
-    src: src/pa3_recognizer
+    src: files/pa3_recognizer
     dest: "{{ build_directory }}"
+    rsync_opts:
+      - "--exclude=tests/"
 
 - name: Copy necessary secrets
   synchronize:
-    src: data/secrets/recognizer_auth
+    src: secrets/recognizer_auth
     dest: "{{ build_directory }}/pa3_recognizer/"
 
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here

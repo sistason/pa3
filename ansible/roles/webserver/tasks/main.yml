@@ -18,29 +18,30 @@
 
 - name: Copy frontent to the host
   synchronize:
-    src: src/pa3_frontend
+    src: files/pa3_frontend
     dest: "{{ build_directory }}"
     rsync_opts:
       - "--exclude=apache2-site.conf.j2"
 
 - name: Copy apache2-config with server_url
   template:
-    src: src/pa3_frontend/apache2-site.conf.j2
+    src: files/pa3_frontend/apache2-site.conf.j2
     dest: "{{ build_directory }}/pa3_frontend/apache2-site.conf"
 
 - name: Copy proxy to the host
   synchronize:
-    src: src/pa3_proxy
+    src: files/pa3_proxy
     dest: "{{ build_directory }}/"
     rsync_opts:
       - "--exclude=proxy.conf.j2"
 
 - name: Copy nginx-proxy-config with server_url
   template:
-    src: src/pa3_proxy/proxy.conf.j2
+    src: files/pa3_proxy/proxy.conf.j2
     dest: "{{ build_directory }}/pa3_proxy/proxy.conf"
 
 # --- Set secrets ---
+# Secrets were copied to this host and localhost by the playbook_tasks_get_secrets beforehand
 - set_fact:
     secret_data_mysql_root_password: "{{ lookup('file', 'secrets/mysql_root_password') }}"
 
@@ -48,7 +49,7 @@
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Copy .dockerignore
   synchronize:
-    src: .dockerignore
+    src: files/.dockerignore
     dest: "{{ build_directory }}/"
 
 - name: Build frontend
@@ -62,7 +63,7 @@
 # Start web containers
 - name: Make sure that the database-volume directory exists
   file: 
-    path: "{{ build_directory }}/mysql"
+    path: "{{ build_directory }}/pa3_mysql"
     state: "directory"
 
 - name: Start mysql container
@@ -76,7 +77,7 @@
       - name: "pa3_net"
         ipv4_address: "{{ subnet }}.3"
     volumes:
-      - "{{ build_directory }}/mysql:/var/lib/mysql:rw"
+      - "{{ build_directory }}/pa3_mysql:/var/lib/mysql:rw"
     env:
       MYSQL_DATABASE: "pa3_django"
       MYSQL_ROOT_PASSWORD: "{{ secret_data_mysql_root_password }}"

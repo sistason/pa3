@@ -6,8 +6,10 @@ import requests
 from base64 import b64decode
 
 import cv2
+import re
 import base64
 import numpy as np
+from socket import gethostbyname
 
 from imagecreation import ImageCreator
 from imagerecognitionTUB import ImageRecognitor
@@ -54,12 +56,25 @@ class WaitingNumberRecognition:
 
         config = self.get_config()
         self.image_recognitor = ImageRecognitor(config)
+        self.cache_dns()
 
     def get_config(self):
         config_url = 'https://{}/get_config'.format(self.url)
                                                                                          # TODO: remove in production
         ret = requests.post(config_url, data={'user': self.user, 'password': self.password}, verify=False)
         return Configuration(ret.json())
+
+    def cache_dns(self):
+        # Cache DNS by writeing the self.url to /etc/hosts
+        url_ip = gethostbyname(self.url)
+        with open('/etc/hosts', 'rw') as f:
+            hosts = f.read()
+            if self.url in hosts:
+                if not re.search(r'^{}\s+{}'.format(url_ip, self.url), hosts):
+                    hosts = re.sub(r'(?m)^(\S+)\s{}$'.format(self.url), url_ip, hosts)
+                    f.write(hosts)
+            else:
+                f.write("{}\n{}    {}".format(hosts, url_ip, self.url))
 
     def spin(self, idle_time=0):
         while True:
