@@ -9,7 +9,7 @@ import cv2
 import re
 import base64
 import numpy as np
-from socket import gethostbyname
+import dns.resolver
 
 from imagecreation import ImageCreator
 from imagerecognitionTUB import ImageRecognitor
@@ -17,14 +17,17 @@ from imagerecognitionTUB import ImageRecognitor
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-class Configuration():
+class Configuration:
     def __init__(self, server_conf):
         self.valid_ranges = server_conf.get('ranges', [])
-        self.previous_numbers = [number.get('number', -1) for number in server_conf.get('current_numbers', [])]
-
-        self.rotate = server_conf.get('rotate', 0)
         # How many numbers are (vertically) on the table?
         self.number_of_numbers = len(self.valid_ranges)
+
+        self.previous_numbers = [number.get('number', -1)
+                                 for number in server_conf.get('current_numbers',
+                                                               [{'number': -1} for _ in range(self.number_of_numbers)])]
+
+        self.rotate = server_conf.get('rotate', 0)
         # How many digits are in the table per number?
         self.number_of_digits = server_conf.get('digits', 3)
 
@@ -62,12 +65,20 @@ class WaitingNumberRecognition:
         config_url = 'https://{}/get_config'.format(self.url)
                                                                                          # TODO: remove in production
         ret = requests.post(config_url, data={'user': self.user, 'password': self.password}, verify=False)
-        return Configuration(ret.json())
+        try:
+            conf_json = ret.json()
+        except ValueError:
+            conf_json = {}
+        return Configuration(conf_json)
 
     def cache_dns(self):
-        # Cache DNS by writeing the self.url to /etc/hosts
-        url_ip = gethostbyname(self.url)
-        with open('/etc/hosts', 'rw') as f:
+        # Cache DNS by writing the self.url to /etc/hosts
+        try:
+            url_ip = dns.resolver.query(self.url, raise_on_no_answer=False).rrset.items[0].address
+        except (ValueError, AttributeError, IndexError):
+            return
+
+        with open('/etc/hosts', 'r+') as f:
             hosts = f.read()
             if self.url in hosts:
                 if not re.search(r'^{}\s+{}'.format(url_ip, self.url), hosts):
@@ -159,6 +170,10 @@ if __name__ == '__main__':
     if camera_ < 0:
         camera_ = environ.get('CAMERA', -1)
 
-    recognition = WaitingNumberRecognition(user=pd['user'], client_password=client_password_,
+    user_ = pd['user']
+    if not user_:
+        user_ = environ.get('USER', '<unset>')
+
+    recognition = WaitingNumberRecognition(user=user_, client_password=client_password_,
                                            server_url=server_url_, camera=camera_, image_directory=image_directory_)
     recognition.spin(idle_time=pd['wait'])

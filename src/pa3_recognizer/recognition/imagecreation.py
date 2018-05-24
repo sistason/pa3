@@ -46,8 +46,8 @@ class ImageCreator():
     def _init_cam(camera_id):
         try:
             cam_ = cv2.VideoCapture(camera_id)
-            cam_.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
-            cam_.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
+            cam_.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            cam_.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
             return cam_
         except Exception as e:
             logging.exception('Error while initializing camera, was: {0}'.format(e))
