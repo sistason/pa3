@@ -30,11 +30,11 @@ build_web:
     - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy:latest
       -f src/pa3_proxy/Dockerfile_proxy
       src/pa3_proxy
-    docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql:latest
+    - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql:latest
       -f src/pa3_mysql/Dockerfile_mysql
       --build-arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
        src/pa3_mysql
 
-    docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
-    docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy
-    docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql
+    - docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
+    - docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy
+    - docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql
