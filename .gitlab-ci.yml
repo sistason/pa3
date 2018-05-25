@@ -19,8 +19,6 @@ test_recognition:
 build_web:
   stage: deploy
   image: williamyeh/ansible:debian9-onbuild
-  before_script:
-    - apt-get update && apt-get install
   script:
     - echo -e "[local]\nlocalhost ansible_connection=local" > hosts.ini
     - ansible-playbook -i hosts.ini -v ansible/gitlab-ci_prepare_build_web.yml
