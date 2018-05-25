@@ -16,27 +16,25 @@ test_recognition:
   except:
     - master
 
-deploy_rec:
-  stage: deploy
-  image: williamyeh/ansible:debian9-onbuild
-  before_script:
-    - DEBIAN_FRONTEND=noninteractive apt-get install -qq -y rsync openssh-client &>/dev/null
-    - mkdir -p ~/.ssh
-    - echo -n "$SSH_DEPLOY_PRIVATEKEY" > ~/.ssh/ssh_private_key
-    - echo "$SSH_DEPLOY_HOSTKEY_WEB" > ~/.ssh/known_hosts
-    - echo "$SSH_DEPLOY_HOSTKEY_REC_02" >> ~/.ssh/known_hosts
-    - echo "$SSH_DEPLOY_HOSTKEY_REC_10" >> ~/.ssh/known_hosts
-    - echo "$SSH_DEPLOY_HOSTKEY_REC_23" >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh ~/.ssh/ssh_private_key
-  script:
-    - ansible-playbook -v -i ansible/hosts ansible/site.yml
-  except:
-    - master
-
 build_web:
   stage: deploy
   before_script:
+    - docker login gitlab-registry.tubit.tu-berlin.de
   script:
-    docker build -t pa3_frontend:latest -f src/pa3_frontend/Dockerfile_frontend src/pa3_frontend --build_arg SECRET_RECOGNIZER_AUTH=$SECRET_RECOGNIZER_AUTH --build_arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD --build_arg SECRET_DJANGO_KEY=$SECRET_DJANGO_KEY
-    docker build -t pa3_proxy:latest -f src/pa3_proxy/Dockerfile_proxy src/pa3_proxy
-    docker build -t pa3_mysql:latest -f src/pa3_mysql/Dockerfile_mysql src/pa3_mysql --build_arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
+    - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend:latest
+      -f src/pa3_frontend/Dockerfile_frontend
+      --build-arg SECRET_RECOGNIZER_AUTH=$SECRET_RECOGNIZER_AUTH
+      --build-arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
+      --build-arg SECRET_DJANGO_KEY=$SECRET_DJANGO_KEY
+      src/pa3_frontend
+    - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy:latest
+      -f src/pa3_proxy/Dockerfile_proxy
+      src/pa3_proxy
+    docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql:latest
+      -f src/pa3_mysql/Dockerfile_mysql
+      --build-arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
+       src/pa3_mysql
+
+    docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
+    docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy
+    docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql

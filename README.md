@@ -42,6 +42,7 @@ Afterwards,
   - SECRET_DJANGO_SECRET_KEY / django_secret_key
   - SECRET_MYSQL_ROOT_PASSWORD / mysql_root_password
   - SECRET_RECOGNIZER_AUTH / recognizer_auth
+  - Create deploy key and put into secrets/gitlab-deploy-key
 
 - with a ssh-key of the recognizers and the webserver(s), use the ansible-playbook site.yml 
    with the hosts-inventory to deploy the entire thing initially/periodically OR
