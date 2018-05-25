@@ -73,7 +73,7 @@
 
 - name: Build proxy
   become: yes
-  command: "docker build -t pa3_proxy:latest -f {{ build_directory }}/pa3_proxy/Dockerfile_proxy {{ build_directory }}/pa3_proxy"
+  command: "docker build -t pa3_proxy:latest -f {{ build_directory }}/pa3_proxy/Dockerfile_proxy {{ build_directory }}"
 
 # Start web containers
 - name: Make sure that the database-volume directory exists

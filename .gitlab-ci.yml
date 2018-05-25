@@ -22,4 +22,21 @@ build_web:
   script:
     - echo -e "[local]\nlocalhost ansible_connection=local" > hosts.ini
     - ansible-playbook -i hosts.ini -v ansible/gitlab-ci_build_web.yml
-    
+    - exit 0
+    - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend:latest
+      -f src/pa3_frontend/Dockerfile_frontend
+      --build-arg SECRET_RECOGNIZER_AUTH=$SECRET_RECOGNIZER_AUTH
+      --build-arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
+      --build-arg SECRET_DJANGO_KEY=$SECRET_DJANGO_SECRET_KEY
+      src/pa3_frontend
+    - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy:latest
+      -f src/pa3_proxy/Dockerfile_proxy
+      src/pa3_proxy
+    - docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql:latest
+      -f src/pa3_mysql/Dockerfile_mysql
+      --build-arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
+       src/pa3_mysql
+
+    - docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
+    - docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy
+    - docker push gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql

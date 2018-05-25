@@ -2,8 +2,8 @@ FROM nginx:stable
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y letsencrypt
 
 # gets created by ansible from .j2-template
-COPY proxy.conf /etc/nginx/conf.d/
-COPY entrypoint.sh /root/
+COPY pa3_proxy/proxy.conf /etc/nginx/conf.d/
+COPY pa3_proxy/entrypoint.sh /root/
 
 RUN mkdir -p /var/www/letsencrypt
 
