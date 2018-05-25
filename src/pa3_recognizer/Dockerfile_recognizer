@@ -4,8 +4,8 @@ FROM sgtwilko/rpi-raspbian-opencv
 RUN mkdir -p /srv/pa3/current_images
 RUN mkdir -p /run/secrets/
 
-COPY recognizer_auth /run/secrets/
-COPY recognition/ /srv/pa3/recognition
+COPY pa3_recognizer/recognizer_auth /run/secrets/
+COPY pa3_recognizer/recognition/ /srv/pa3/recognition
 
 RUN pip3 install -r /srv/pa3/recognition/requirements.txt
 
