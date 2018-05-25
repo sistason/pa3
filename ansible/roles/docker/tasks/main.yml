@@ -1,4 +1,5 @@
 ---
+# TODO: check if command-not-found, else skip whole docker apt
 # Adapted from nickjj/ansible-docker
 - name: Install Docker and role dependencies
   become: yes

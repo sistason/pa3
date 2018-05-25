@@ -20,7 +20,7 @@
   become: yes
   docker_container:
     name: pa3_recognizer
-    hostname: "pa3_{{ inventory_hostname }}"
+    hostname: "pa3_recognizer_{{ inventory_hostname }}"
     image: pa3_recognizer
     state: started
     devices:
