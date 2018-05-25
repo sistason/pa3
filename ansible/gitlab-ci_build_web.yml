@@ -1,7 +1,8 @@
 ---
 - hosts: localhost
   connection: local
-  gather_facts: false
+  roles:
+    - docker
   tasks:
     - name: Template the cron-script
       template:
