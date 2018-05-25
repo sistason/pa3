@@ -20,6 +20,6 @@ build_web:
   stage: deploy
   image: williamyeh/ansible:debian9-onbuild
   before_script:
-    - apt-get install -y openssh-client
+    - apt-get -qq update -y && apt-get install -y openssh-client
   script:
     - ansible-playbook -vvv ansible/gitlab-ci_build_web.yml
