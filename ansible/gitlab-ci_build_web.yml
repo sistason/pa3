@@ -3,6 +3,9 @@
   connection: local
   gather_facts: false
   tasks:
+    - debug:
+        msg: "{{ lookup('env', 'SECRET_RECOGNIZER_AUTH') }}"
+        
     - name: Template the cron-script
       template:
         src: files/pa3_frontend/update_script.sh.j2
@@ -17,9 +20,6 @@
       template:
         src: files/pa3_proxy/proxy.conf.j2
         dest: "files/pa3_proxy/proxy.conf"
-
-    - debug:
-        msg: "{{ lookup('env', 'SECRET_RECOGNIZER_AUTH') }}"
 
     - name: Build frontend
       command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend:latest
