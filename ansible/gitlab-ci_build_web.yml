@@ -5,7 +5,7 @@
   tasks:
     - debug:
         msg: "{{ lookup('env', 'SECRET_RECOGNIZER_AUTH') }}"
-        
+
     - name: Template the cron-script
       template:
         src: files/pa3_frontend/update_script.sh.j2

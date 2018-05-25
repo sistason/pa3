@@ -20,4 +20,4 @@ build_web:
   stage: deploy
   image: williamyeh/ansible:debian9-onbuild
   script:
-    - ansible-playbook -vvv ansible/gitlab-ci_build_web.yml
+    - ansible-playbook --connection=local -vvv ansible/gitlab-ci_build_web.yml
