@@ -10,32 +10,32 @@
 
     - name: Copy apache2-config with server_url
       template:
-        src: roles/webserver/files/pa3_frontend/apache2-site.conf.j2
-        dest: roles/webserver/files/pa3_frontend/apache2-site.conf
+        src: ../src/pa3_frontend/apache2-site.conf.j2
+        dest: ../src/pa3_frontend/apache2-site.conf
 
     - name: Copy nginx-proxy-config with server_url
       template:
-        src: roles/webserver/files/pa3_proxy/proxy.conf.j2
-        dest: roles/webserver/files/pa3_proxy/proxy.conf
+        src: ../src/pa3_proxy/proxy.conf.j2
+        dest: ../src/pa3_proxy/proxy.conf
 
     - name: Build frontend
       command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend:latest
-        -f src/pa3_frontend/Dockerfile_frontend
+        -f ../src/pa3_frontend/Dockerfile_frontend
         --build-arg SECRET_RECOGNIZER_AUTH={{ lookup('env', 'SECRET_RECOGNIZER_AUTH') }}
         --build-arg SECRET_MYSQL_ROOT_PASSWORD={{ lookup('env', 'SECRET_MYSQL_ROOT_PASSWORD') }}
         --build-arg SECRET_DJANGO_KEY={{ lookup('env', 'SECRET_DJANGO_KEY') }}
-        src"
+        ../src"
 
     - name: Build proxy
       command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy:latest
-        -f src/pa3_proxy/Dockerfile_proxy
-        src"
+        -f ../src/pa3_proxy/Dockerfile_proxy
+        ../src"
 
     - name: Build mysql
       command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql:latest
-        -f src/pa3_mysql/Dockerfile_mysql
+        -f ../src/pa3_mysql/Dockerfile_mysql
         --build-arg SECRET_MYSQL_ROOT_PASSWORD={{ lookup('env', 'SECRET_MYSQL_ROOT_PASSWORD') }}
-        src"
+        ../src"
 
     - name: Push frontend
       docker_image:
