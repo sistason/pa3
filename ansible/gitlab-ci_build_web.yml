@@ -23,7 +23,7 @@
         -f ../src/pa3_frontend/Dockerfile_frontend
         --build-arg SECRET_RECOGNIZER_AUTH={{ lookup('env', 'SECRET_RECOGNIZER_AUTH') }}
         --build-arg SECRET_MYSQL_ROOT_PASSWORD={{ lookup('env', 'SECRET_MYSQL_ROOT_PASSWORD') }}
-        --build-arg SECRET_DJANGO_KEY={{ lookup('env', 'SECRET_DJANGO_KEY') }}
+        --build-arg SECRET_DJANGO_KEY={{ lookup('env', 'SECRET_DJANGO_SECRET_KEY') }}
         ../src"
 
     - name: Build proxy
