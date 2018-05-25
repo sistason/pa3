@@ -44,6 +44,11 @@
     install_recommends: False
     cache_valid_time: "86400"
 
+- name: create etc/docker directory
+  file:
+    path: "/etc/docker"
+    state: "directory"
+
 - name: Configure Docker - create config file
   become: yes
   copy:
