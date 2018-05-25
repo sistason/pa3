@@ -12,7 +12,7 @@
 
 - name: Initially, just clone the repo
   git:
-    repo: ssh://gitlab.tu-berlin.de/freitagsrunde/pa3
+    repo: ssh://git@gitlab.tu-berlin.de/freitagsrunde/pa3
     dest: "{{ build_directory }}/pa3_recognizer/"
     keyfile: "{{ build_directory }}/gitlab_deploy_key"
   when: use_gitlab and p.stat.isdir is not defined or not p.stat.isdir
