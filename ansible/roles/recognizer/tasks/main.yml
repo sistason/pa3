@@ -1,20 +1,55 @@
 ---
+- name: Copy git-deploy-key
+  synchronize:
+    src: secrets/gitlab_deploy_key
+    dest: "{{ build_directory }}"
+  when: use_gitlab
+
+- name: Check if the recognizer is already deployed
+  stat:
+    path: "{{ build_directory }}/pa3_recognizer/"
+  register: p
+
+- name: Initially, just clone the repo
+  git:
+    repo: ssh://gitlab.tu-berlin.de/freitagsrunde/pa3
+    dest: "{{ build_directory }}/pa3_recognizer/"
+    keyfile: "{{ build_directory }}/gitlab_deploy_key"
+  when: use_gitlab and p.stat.isdir is not defined or not p.stat.isdir
+
 - name: Copy pa3_recognizer src to the host
   synchronize:
     src: files/pa3_recognizer
     dest: "{{ build_directory }}"
     rsync_opts:
       - "--exclude=tests/"
+      - "--exclude=update_script.sh.j2"
+  when: not use_gitlab or p.stat.isdir is defined and p.stat.isdir
 
 - name: Copy necessary secrets
   synchronize:
     src: secrets/recognizer_auth
     dest: "{{ build_directory }}/pa3_recognizer/"
 
+- name: Template the cron-script
+  template:
+    src: files/pa3_recognizer/update_script.sh.j2
+    dest: "{{ build_directory }}/pa3_recognizer/update_script.sh"
+  when: use_gitlab
+
+- name: setup the cron-script in cron
+  cron:
+    name: "update_recognition"
+    minute: "0"
+    hour: "*"
+    job: "{{ build_directory }}/pa3_recognizer/update_script.sh"
+  when: use_gitlab
+
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
 - name: Build recognizer
   become: yes
   command: docker build -t pa3_recognizer:latest -f "{{ build_directory }}/pa3_recognizer/Dockerfile_recognizer" "{{ build_directory }}/pa3_recognizer"
+
 
 - name: Start the recognizer container on the host
   become: yes

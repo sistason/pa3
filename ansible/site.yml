@@ -1,5 +1,4 @@
 ---
 
-- import_playbook: secrets.yml
 - import_playbook: webservers.yml
 - import_playbook: recognizers.yml

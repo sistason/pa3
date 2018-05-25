@@ -11,7 +11,10 @@ RUN sed -i -e 's/# de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
 ENV LANG de_DE.UTF-8 
 
 # Copy secrets manually (not a swarm, no service-secrets available)
-COPY secrets /run/secrets
+RUN mkdir /run/secrets
+RUN echo "$SECRET_RECOGNIZER_AUTH" > /run/secrets/recognizer_auth
+RUN echo "$SECRET_MYSQL_ROOT_PASSWORD" > /run/secrets/mysql_root_password
+RUN echo "$SECRET_DJANGO_KEY" > /run/secrets/django_key
 RUN chown www-data:www-data /run/secrets/*
 RUN chown www-data:www-data /dev/shm
 

@@ -22,6 +22,21 @@
     dest: "{{ build_directory }}"
     rsync_opts:
       - "--exclude=apache2-site.conf.j2"
+      - "--exclude=update_script.sh.j2"
+
+- name: Template the cron-script
+  template:
+    src: files/pa3_frontend/update_script.sh.j2
+    dest: "{{ build_directory }}/pa3_frontend/update_script.sh"
+  when: use_gitlab
+
+- name: setup the cron-script in cron
+  cron:
+    name: "update_recognition"
+    minute: "0"
+    hour: "*"
+    job: "{{ build_directory }}/pa3_frontend/update_script.sh"
+  when: use_gitlab
 
 - name: Copy apache2-config with server_url
   template:

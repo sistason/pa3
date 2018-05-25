@@ -1,8 +1,9 @@
 ---
 # file: group_vars/all-vars.yml
 build_directory: "/home/{{ ansible_user }}"
-server_url: "pa3.sistason.de"
+server_url: "pa.freitagsrunde.org"
 subnet: "172.30.0"
+use_gitlab: True
 ansible_user: pa3
 ansible_ssh_private_key_file: ~/.ssh/ssh_private_key
 ansible_connection: ssh

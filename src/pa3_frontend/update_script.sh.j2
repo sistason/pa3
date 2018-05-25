@@ -1,0 +1,48 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
+git pull    #TODO: force?
+
+docker container stop pa3_frontend pa3_proxy pa3_mysql
+
+NET=pa3_net
+if ! docker inspect $NET &>/dev/null; then
+    docker network create -o com.docker.network.bridge.name=pa3-docker-br --subnet {{ subnet }}.0/28 $NET
+fi
+
+mysql_initial=false
+MYSQL_DIR=$DIR/../pa3_mysql
+if [ ! -e $MYSQL_DIR ]; then
+    mkdir -p $MYSQL_DIR
+    chown 999:999 $MYSQL_DIR # uid(999) = mysql
+    mysql_initial=true
+fi
+docker run --name pa3_mysql -h pa3_mysql --net $NET --ipv4_address "{{ subnet }}.3" \
+    -v "$MYSQL_DIR:/var/lib/mysql:rw" \
+    pa3_mysql
+
+# Wait for the mysql-container to be up and to have build the database
+if [ $mysql_initial ]; then
+    sleep 15
+fi
+
+# Make sure the certificates-directory exists
+CERT_DIR=$DIR/../letsencrypt
+if [ ! -e $CERT_DIR ]; then
+    mkdir -p $CERT_DIR
+    chown 33:33 $CERT_DIR # uid(33) = www-data
+fi
+
+docker run --name pa3_proxy -h pa3_proxy --net $NET --ipv4_address "{{ subnet }}.2" \
+    -v "$CERT_DIR:/etc/letsencrypt:rw" \
+    pa3_proxy "{{ server_url }}"
+
+if [ ! -e "$CERT_DIR/archive/{{ server_url }}" ]; then
+    sleep 60
+fi
+
+docker run --name pa3_frontend -h pa3_frontend --net $NET --ipv4_address "{{ subnet }}.4" \
+    -v "$CERT_DIR/archive:/etc/apache2/ssl:rw" \
+    pa3_frontend
