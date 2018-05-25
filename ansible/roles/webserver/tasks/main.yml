@@ -71,7 +71,7 @@
   docker_container:
     name: pa3_mysql
     hostname: pa3_mysql
-    image: mysql
+    image: pa3_mysql
     state: started
     networks:
       - name: "pa3_net"

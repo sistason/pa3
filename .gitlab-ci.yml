@@ -16,7 +16,7 @@ test_recognition:
   except:
     - master
 
-deploy_web:
+deploy_rec:
   stage: deploy
   image: williamyeh/ansible:debian9-onbuild
   before_script:
@@ -30,3 +30,13 @@ deploy_web:
     - chmod 644 ~/.ssh/known_hosts && chmod 700 ~/.ssh ~/.ssh/ssh_private_key
   script:
     - ansible-playbook -v -i ansible/hosts ansible/site.yml
+  except:
+    - master
+
+build_web:
+  stage: deploy
+  before_script:
+  script:
+    docker build -t pa3_frontend:latest -f src/pa3_frontend/Dockerfile_frontend src/pa3_frontend --build_arg SECRET_RECOGNIZER_AUTH=$SECRET_RECOGNIZER_AUTH --build_arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD --build_arg SECRET_DJANGO_KEY=$SECRET_DJANGO_KEY
+    docker build -t pa3_proxy:latest -f src/pa3_proxy/Dockerfile_proxy src/pa3_proxy
+    docker build -t pa3_mysql:latest -f src/pa3_mysql/Dockerfile_mysql src/pa3_mysql --build_arg SECRET_MYSQL_ROOT_PASSWORD=$SECRET_MYSQL_ROOT_PASSWORD
