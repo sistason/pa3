@@ -35,7 +35,7 @@
 - name: Copy necessary secrets
   synchronize:
     src: secrets/recognizer_auth
-    dest: "{{ build_directory }}/pa3/"
+    dest: "{{ build_directory }}/pa3/src/pa3_recognizer/recognizer_auth"
 
 - name: Template the cron-script
   template:
