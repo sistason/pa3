@@ -3,7 +3,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-git pull    #TODO: force?
+docker login gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3
 
 docker container stop pa3_frontend pa3_proxy pa3_mysql
 
@@ -21,7 +21,7 @@ if [ ! -e $MYSQL_DIR ]; then
 fi
 docker run --name pa3_mysql -h pa3_mysql --net $NET --ipv4_address "{{ subnet }}.3" \
     -v "$MYSQL_DIR:/var/lib/mysql:rw" \
-    pa3_mysql
+    gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql
 
 # Wait for the mysql-container to be up and to have build the database
 if [ $mysql_initial ]; then
@@ -37,7 +37,7 @@ fi
 
 docker run --name pa3_proxy -h pa3_proxy --net $NET --ipv4_address "{{ subnet }}.2" \
     -v "$CERT_DIR:/etc/letsencrypt:rw" \
-    pa3_proxy "{{ server_url }}"
+    gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy "{{ server_url }}"
 
 if [ ! -e "$CERT_DIR/archive/{{ server_url }}" ]; then
     sleep 60
@@ -45,4 +45,4 @@ fi
 
 docker run --name pa3_frontend -h pa3_frontend --net $NET --ipv4_address "{{ subnet }}.4" \
     -v "$CERT_DIR/archive:/etc/apache2/ssl:rw" \
-    pa3_frontend
+    gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
