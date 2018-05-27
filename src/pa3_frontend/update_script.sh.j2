@@ -3,7 +3,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-docker login gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3
+docker login pa-registry.freitagsrunde.org -u pa -p $(<secrets/pa-registry_password)
+
 
 docker container stop pa3_frontend pa3_proxy pa3_mysql
 

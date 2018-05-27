@@ -20,7 +20,7 @@
         dest: ../src/pa3_proxy/proxy.conf
 
     - name: login
-      command: "docker login -u gitlab-ci-token -p {{ lookup('env', 'CI_BUILD_TOKEN') }} gitlab-registry.tubit.tu-berlin.de"
+      command: "docker login -u pa -p {{ lookup('env', 'SECRET_REGISTRY_PASSWORD') }} pa-registry.freitagsrunde.org"
 
     - name: Build frontend
       command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend:latest
