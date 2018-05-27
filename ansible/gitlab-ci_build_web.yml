@@ -23,7 +23,7 @@
       command: "docker login -u pa -p {{ lookup('env', 'SECRET_REGISTRY_PASSWORD') }} pa-registry.freitagsrunde.org"
 
     - name: Build frontend
-      command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend:latest
+      command: "docker build -t pa-registry.freitagsrunde.org/freitagsrunde/pa3/pa3_frontend:latest
         -f ../src/pa3_frontend/Dockerfile_frontend
         --build-arg SECRET_RECOGNIZER_AUTH=\"{{ lookup('env', 'SECRET_RECOGNIZER_AUTH') }}\"
         --build-arg SECRET_MYSQL_ROOT_PASSWORD=\"{{ lookup('env', 'SECRET_MYSQL_ROOT_PASSWORD') }}\"
@@ -31,27 +31,27 @@
         ../src"
 
     - name: Build proxy
-      command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy:latest
+      command: "docker build -t pa-registry.freitagsrunde.org/freitagsrunde/pa3/pa3_proxy:latest
         -f ../src/pa3_proxy/Dockerfile_proxy
         ../src"
 
     - name: Build mysql
-      command: "docker build -t gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql:latest
+      command: "docker build -t pa-registry.freitagsrunde.org/freitagsrunde/pa3/pa3_mysql:latest
         -f ../src/pa3_mysql/Dockerfile_mysql
         --build-arg SECRET_MYSQL_ROOT_PASSWORD={{ lookup('env', 'SECRET_MYSQL_ROOT_PASSWORD') }}
         ../src"
 
     - name: Push frontend
       docker_image:
-        name: gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
+        name: pa-registry.freitagsrunde.org/freitagsrunde/pa3/pa3_frontend
         push: yes
 
     - name: Push proxy
       docker_image:
-        name: gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy
+        name: pa-registry.freitagsrunde.org/freitagsrunde/pa3/pa3_proxy
         push: yes
 
     - name: Push mysql
       docker_image:
-        name: gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql
+        name: pa-registry.freitagsrunde.org/freitagsrunde/pa3/pa3_mysql
         push: yes
