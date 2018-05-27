@@ -3,6 +3,7 @@
 - name: Check if docker is already there
   command: docker info
   register: p
+  ignore_errors: yes
 
 - set_fact:
     docker_missing: "{{ p.rc != 0 }}"
