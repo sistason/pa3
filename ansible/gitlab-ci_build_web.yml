@@ -6,8 +6,8 @@
   tasks:
     - name: Template the cron-script
       template:
-        src: ../src/pa3_frontend/update_script.sh.j2
-        dest: ../src/pa3_frontend/update_script.sh
+        src: ../src/update_webserver.sh.j2
+        dest: ../src/update_webserver.sh
 
     - name: Copy apache2-config with server_url
       template:
