@@ -29,7 +29,6 @@
     dest: "{{ build_directory }}"
     rsync_opts:
       - "--exclude=tests/"
-      - "--exclude=update_script.sh.j2"
   when: not use_gitlab or p.stat.isdir is defined and p.stat.isdir
 
 - name: Copy necessary secrets
@@ -39,8 +38,8 @@
 
 - name: Template the cron-script
   template:
-    src: files/pa3_recognizer/update_script.sh.j2
-    dest: "{{ build_directory }}/pa3/update_script.sh"
+    src: files/update_recognizer.sh.j2
+    dest: "{{ build_directory }}/update_recognizer.sh"
   when: use_gitlab
 
 - name: setup the cron-script in cron
@@ -48,7 +47,7 @@
     name: "update_recognition"
     minute: "0"
     hour: "*"
-    job: "{{ build_directory }}/pa3/update_script.sh"
+    job: "{{ build_directory }}/update_recognizer.sh"
   when: use_gitlab
 
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here

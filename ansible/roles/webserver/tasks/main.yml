@@ -22,12 +22,11 @@
     dest: "{{ build_directory }}"
     rsync_opts:
       - "--exclude=apache2-site.conf.j2"
-      - "--exclude=update_script.sh.j2"
 
 - name: Template the cron-script
   template:
-    src: files/pa3_frontend/update_script.sh.j2
-    dest: "{{ build_directory }}/pa3_frontend/update_script.sh"
+    src: files/update_webserver.sh.j2
+    dest: "{{ build_directory }}/update_webserver.sh"
   when: use_gitlab
 
 - name: setup the cron-script in cron
@@ -35,13 +34,18 @@
     name: "update_recognition"
     minute: "0"
     hour: "*"
-    job: "{{ build_directory }}/pa3_frontend/update_script.sh"
+    job: "{{ build_directory }}/update_webserver.sh"
   when: use_gitlab
 
 - name: Copy apache2-config with server_url
   template:
     src: files/pa3_frontend/apache2-site.conf.j2
     dest: "{{ build_directory }}/pa3_frontend/apache2-site.conf"
+
+- name: Copy mysql to the host
+  synchronize:
+    src: files/pa3_mysql
+    dest: "{{ build_directory }}/"
 
 - name: Copy proxy to the host
   synchronize:
@@ -56,9 +60,10 @@
     dest: "{{ build_directory }}/pa3_proxy/proxy.conf"
 
 # --- Set secrets ---
-# Secrets were copied to this host and localhost by the playbook_tasks_get_secrets beforehand
 - set_fact:
     secret_data_mysql_root_password: "{{ lookup('file', 'secrets/mysql_root_password') }}"
+    secret_data_django_secret_key: "{{ lookup('file', 'secrets/django_secret_key') }}"
+    secret_data_recognizer_auth: "{{ lookup('file', 'secrets/recognizer_auth') }}"
 
 # Build containers
 # Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
@@ -68,17 +73,28 @@
     dest: "{{ build_directory }}/"
 
 - name: Build frontend
-  become: yes
-  command: "docker build -t pa3_frontend:latest -f {{ build_directory }}/pa3_frontend/Dockerfile_frontend {{ build_directory }}"
+  command: "docker build -t pa3_frontend:latest
+    -f {{ build_directory }}/pa3_frontend/Dockerfile_frontend
+    --build-arg SECRET_RECOGNIZER_AUTH=\"{{ secret_data_recognizer_auth }}\"
+    --build-arg SECRET_MYSQL_ROOT_PASSWORD=\"{{ secret_data_mysql_root_password }}\"
+    --build-arg SECRET_DJANGO_KEY=\"{{ secret_data_django_secret_key }}\"
+    {{ build_directory }}"
 
 - name: Build proxy
-  become: yes
-  command: "docker build -t pa3_proxy:latest -f {{ build_directory }}/pa3_proxy/Dockerfile_proxy {{ build_directory }}"
+  command: "docker build -t pa3_proxy:latest
+    -f {{ build_directory }}/pa3_proxy/Dockerfile_proxy
+    {{ build_directory }}"
+
+- name: Build mysql
+  command: "docker build -t pa3_mysql:latest
+    -f {{ build_directory }}/pa3_mysql/Dockerfile_mysql
+    --build-arg SECRET_MYSQL_ROOT_PASSWORD=\"{{ secret_data_mysql_root_password }}\"
+    {{ build_directory }}"
 
 # Start web containers
 - name: Make sure that the database-volume directory exists
   file: 
-    path: "{{ build_directory }}/pa3_mysql"
+    path: "{{ build_directory }}/pa3_mysql_data"
     state: "directory"
 
 - name: Start mysql container
@@ -92,10 +108,7 @@
       - name: "pa3_net"
         ipv4_address: "{{ subnet }}.3"
     volumes:
-      - "{{ build_directory }}/pa3_mysql:/var/lib/mysql:rw"
-    env:
-      MYSQL_DATABASE: "pa3_django"
-      MYSQL_ROOT_PASSWORD: "{{ secret_data_mysql_root_password }}"
+      - "{{ build_directory }}/pa3_mysql_data:/var/lib/mysql:rw"
   register: mysql_container
 
 - name: Wait for the mysql-container to be up and to have build the database
@@ -105,7 +118,7 @@
 
 - name: Make sure the certificates-directory exists
   file:
-    path: "{{ build_directory }}/letsencrypt"
+    path: "{{ build_directory }}/letsencrypt_data"
     state: "directory"
 
 - name: Start letsencrypt proxy container
@@ -118,12 +131,12 @@
       - name: "pa3_net"
         ipv4_address: "{{ subnet }}.2"
     volumes:
-      - "{{ build_directory }}/letsencrypt:/etc/letsencrypt:rw"
+      - "{{ build_directory }}/letsencrypt_data:/etc/letsencrypt:rw"
 
 - name: Wait for the certificate build by the proxy
   become: yes
   wait_for:
-    path: "{{ build_directory}}/letsencrypt/archive/{{ server_url }}"
+    path: "{{ build_directory}}/letsencrypt_data/archive/{{ server_url }}"
     timeout: 60
 
 - name: Start frontend container
@@ -138,4 +151,4 @@
         ipv4_address: "{{ subnet }}.4"
     volume_driver: bind
     volumes:
-      - "{{ build_directory }}/letsencrypt/archive:/etc/apache2/ssl:rw"
+      - "{{ build_directory }}/letsencrypt_data/archive:/etc/apache2/ssl:rw"

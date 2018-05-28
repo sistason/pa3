@@ -1,10 +1,8 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $DIR
 
-docker login pa-registry.freitagsrunde.org -u pa -p $(<secrets/pa-registry_password)
-
+docker login pa-registry.freitagsrunde.org -u pa -p $(<$DIR/secrets/pa-registry_password)
 
 docker container stop pa3_frontend pa3_proxy pa3_mysql
 
@@ -14,15 +12,15 @@ if ! docker inspect $NET &>/dev/null; then
 fi
 
 mysql_initial=false
-MYSQL_DIR=$DIR/../pa3_mysql
+MYSQL_DIR=$DIR/pa3_mysql_data
 if [ ! -e $MYSQL_DIR ]; then
     mkdir -p $MYSQL_DIR
     chown 999:999 $MYSQL_DIR # uid(999) = mysql
     mysql_initial=true
 fi
-docker run --name pa3_mysql -h pa3_mysql --net $NET --ipv4_address "{{ subnet }}.3" \
+docker run --name pa3_mysql -h pa3_mysql --net $NET --ip "{{ subnet }}.3" \
     -v "$MYSQL_DIR:/var/lib/mysql:rw" \
-    gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_mysql
+    pa-registry.freitagsrunde.org/pa3_mysql
 
 # Wait for the mysql-container to be up and to have build the database
 if [ $mysql_initial ]; then
@@ -30,20 +28,20 @@ if [ $mysql_initial ]; then
 fi
 
 # Make sure the certificates-directory exists
-CERT_DIR=$DIR/../letsencrypt
+CERT_DIR=$DIR/letsencrypt_data
 if [ ! -e $CERT_DIR ]; then
     mkdir -p $CERT_DIR
     chown 33:33 $CERT_DIR # uid(33) = www-data
 fi
 
-docker run --name pa3_proxy -h pa3_proxy --net $NET --ipv4_address "{{ subnet }}.2" \
+docker run --name pa3_proxy -h pa3_proxy --net $NET --ip "{{ subnet }}.2" \
     -v "$CERT_DIR:/etc/letsencrypt:rw" \
-    gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_proxy "{{ server_url }}"
+    pa-registry.freitagsrunde.org/pa3_proxy "{{ server_url }}"
 
 if [ ! -e "$CERT_DIR/archive/{{ server_url }}" ]; then
     sleep 60
 fi
 
-docker run --name pa3_frontend -h pa3_frontend --net $NET --ipv4_address "{{ subnet }}.4" \
+docker run --name pa3_frontend -h pa3_frontend --net $NET --ip "{{ subnet }}.4" \
     -v "$CERT_DIR/archive:/etc/apache2/ssl:rw" \
-    gitlab-registry.tubit.tu-berlin.de/freitagsrunde/pa3/pa3_frontend
+    pa-registry.freitagsrunde.org/pa3_frontend
