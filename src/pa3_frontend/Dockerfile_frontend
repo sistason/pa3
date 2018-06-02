@@ -13,11 +13,11 @@ ENV LANG de_DE.UTF-8
 # Copy secrets manually (not a swarm, no service-secrets available)
 ARG SECRET_MYSQL_ROOT_PASSWORD
 ARG SECRET_RECOGNIZER_AUTH
-ARG SECRET_DJANGO_KEY
+ARG SECRET_DJANGO_SECRET_KEY
 RUN mkdir /run/secrets
 RUN echo "$SECRET_RECOGNIZER_AUTH" > /run/secrets/recognizer_auth
 RUN echo "$SECRET_MYSQL_ROOT_PASSWORD" > /run/secrets/mysql_root_password
-RUN echo "$SECRET_DJANGO_KEY" > /run/secrets/django_key
+RUN echo "$SECRET_DJANGO_SECRET_KEY" > /run/secrets/django_secret_key
 RUN chown www-data:www-data /run/secrets/*
 
 RUN chown www-data:www-data /dev/shm

@@ -2,6 +2,7 @@
 # file: group_vars/all-vars.yml
 build_directory: "/srv/pa3"
 server_url: "pa.freitagsrunde.org"
+repo_url: "pa-registry.freitagsrunde.org"
 subnet: "172.30.0"
 use_gitlab: True
 ansible_user: root

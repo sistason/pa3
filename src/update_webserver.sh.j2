@@ -2,13 +2,13 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-docker login pa-registry.freitagsrunde.org -u pa -p $(<$DIR/secrets/pa-registry_password)
+docker login "{{ repo_url }}" -u pa -p $(<$DIR/secrets/pa-registry_password)
 
 docker container stop pa3_frontend pa3_proxy pa3_mysql
 
 NET=pa3_net
 if ! docker inspect $NET &>/dev/null; then
-    docker network create -o com.docker.network.bridge.name=pa3-docker-br --subnet {{ subnet }}.0/28 $NET
+    docker network create -o com.docker.network.bridge.name=pa3-docker-br --subnet "{{ subnet }}".0/28 $NET
 fi
 
 mysql_initial=false
@@ -18,9 +18,9 @@ if [ ! -e $MYSQL_DIR ]; then
     chown 999:999 $MYSQL_DIR # uid(999) = mysql
     mysql_initial=true
 fi
-docker run --name pa3_mysql -h pa3_mysql --net $NET --ip "{{ subnet }}.3" \
+docker run -d --name pa3_mysql -h pa3_mysql --net $NET --ip "{{ subnet }}.3" \
     -v "$MYSQL_DIR:/var/lib/mysql:rw" \
-    pa-registry.freitagsrunde.org/pa3_mysql
+    "{{ repo_url }}/pa3_mysql"
 
 # Wait for the mysql-container to be up and to have build the database
 if [ $mysql_initial ]; then
@@ -34,14 +34,14 @@ if [ ! -e $CERT_DIR ]; then
     chown 33:33 $CERT_DIR # uid(33) = www-data
 fi
 
-docker run --name pa3_proxy -h pa3_proxy --net $NET --ip "{{ subnet }}.2" \
+docker run -d --name pa3_proxy -h pa3_proxy --net $NET --ip "{{ subnet }}.2" \
     -v "$CERT_DIR:/etc/letsencrypt:rw" \
-    pa-registry.freitagsrunde.org/pa3_proxy "{{ server_url }}"
+    "{{ repo_url }}/pa3_proxy" "{{ server_url }}"
 
 if [ ! -e "$CERT_DIR/archive/{{ server_url }}" ]; then
     sleep 60
 fi
 
-docker run --name pa3_frontend -h pa3_frontend --net $NET --ip "{{ subnet }}.4" \
+docker run -d --name pa3_frontend -h pa3_frontend --net $NET --ip "{{ subnet }}.4" \
     -v "$CERT_DIR/archive:/etc/apache2/ssl:rw" \
-    pa-registry.freitagsrunde.org/pa3_frontend
+    "{{ repo_url }}/pa3_frontend"
