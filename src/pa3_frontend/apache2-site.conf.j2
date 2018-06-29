@@ -7,7 +7,32 @@ Define URL2 pruefungsamt.org
     ServerAlias ${URL2}
     ServerAlias www.${URL2}
 
-    Redirect permanent / https://${URL}/
+    ServerAdmin pa@freitagsrunde.org
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+
+    LogLevel warn
+
+    WSGIScriptAlias / /srv/pa3_django/pa3/wsgi.py
+
+    WSGIDaemonProcess pa3-django-wsgi processes=5 threads=1 python-path=/srv/pa3_django/:/usr/local/lib/python3.6/site-packages
+    WSGIProcessGroup pa3-django-wsgi
+    WSGIPassAuthorization On
+
+    <Directory /srv/pa3_django/pa3/>
+        <Files wsgi.py>
+            Require all granted
+        </Files>
+    </Directory>
+
+    Alias /static/ /srv/pa3_django/staticfiles/
+    <Directory /srv/pa3_django/staticfiles/>
+            Require all granted
+    </Directory>
+
+    Alias /current_images/ /dev/shm/
+    <Directory /dev/shm/>
+            Require all granted
+    </Directory>
 </VirtualHost>
 
 <VirtualHost *:443>

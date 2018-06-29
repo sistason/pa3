@@ -18,7 +18,7 @@ if [ ! -e $MYSQL_DIR ]; then
     chown 999:999 $MYSQL_DIR # uid(999) = mysql
     mysql_initial=true
 fi
-docker run -d --name pa3_mysql -h pa3_mysql --net $NET --ip "{{ subnet }}.3" \
+docker run -d --rm --name pa3_mysql -h pa3_mysql --net $NET --ip "{{ subnet }}.3" \
     -v "$MYSQL_DIR:/var/lib/mysql:rw" \
     "{{ repo_url }}/pa3_mysql"
 
@@ -34,7 +34,7 @@ if [ ! -e $CERT_DIR ]; then
     chown 33:33 $CERT_DIR # uid(33) = www-data
 fi
 
-docker run -d --name pa3_proxy -h pa3_proxy --net $NET --ip "{{ subnet }}.2" \
+docker run -d --rm --name pa3_proxy -h pa3_proxy --net $NET --ip "{{ subnet }}.2" \
     -v "$CERT_DIR:/etc/letsencrypt:rw" \
     "{{ repo_url }}/pa3_proxy" "{{ server_url }}"
 
@@ -42,6 +42,6 @@ if [ ! -e "$CERT_DIR/archive/{{ server_url }}" ]; then
     sleep 60
 fi
 
-docker run -d --name pa3_frontend -h pa3_frontend --net $NET --ip "{{ subnet }}.4" \
+docker run -d --rm --name pa3_frontend -h pa3_frontend --net $NET --ip "{{ subnet }}.4" \
     -v "$CERT_DIR/archive:/etc/apache2/ssl:rw" \
     "{{ repo_url }}/pa3_frontend"
