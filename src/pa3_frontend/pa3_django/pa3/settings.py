@@ -48,7 +48,7 @@ RECOGNIZER_CONFIG = {
     },
     "pa_23": {
         "digits": 3,
-        "ranges": [[400, 599], [600, 799], [1000, 1499]]
+        "ranges": [[400, 599], [600, 799], [0, 499]]
     }
 }
 
@@ -65,8 +65,7 @@ OPENINGS = [{'weekday': 1, 'begin': 930, 'end': 1230},
 ]
 
 # TODO: You probably want to change this here according to server_url
-ALLOWED_HOSTS = ['pa.freitagsrunde.org', 'www.pa.freitagsrunde.org', 'pruefungsamt.org', 'www.pruefungsamt.org',
-                 '172.16.0.4', 'pa3_frontend', 'pa3.sistason.de', 'www.pa3.sistason.de', 'localhost', '172.16.0.6']
+ALLOWED_HOSTS = ['pa.freitagsrunde.org', 'pa3.freitagsrunde.org', 'localhost', '130.149.85.166', '10.123.45.67']
 
 
 # Quick-start development settings - unsuitable for production
@@ -93,6 +92,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -123,7 +123,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'pa3.wsgi.application'
 
 
-with open(os.path.join('/run', "secrets", "mysql_root_password")) as f:
+with open(os.path.join('/run', "secrets", "mysql_password")) as f:
     mysql_pw = f.read()
 
 # Database
@@ -132,7 +132,7 @@ with open(os.path.join('/run', "secrets", "mysql_root_password")) as f:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': 'pa3_mysql',
+        'HOST': 'mysql',
         'NAME': 'pa3_django',
         'USER': 'root',
         'PASSWORD': mysql_pw.strip(),
@@ -182,3 +182,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles/')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

@@ -4,7 +4,7 @@ The recognizer is deployed on a host with a webcam or with access to images it s
 
 #### Ansible Playbook
 You can change the `server_url` to where the recognition POSTs its results to, 
-and the `camera-id` (/dev/videoX) in the ansible-playbook.
+and maybe the `camera-id` (/dev/videoX) in the ansible-playbook.
 
 #### Dockerfile
 The Dockerfile just builds a opencv-ready container and adds the secrets, the recognition-src and the entrypoint.

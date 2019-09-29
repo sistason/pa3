@@ -80,8 +80,8 @@ def write(request):
             numbers.append(-1)
 
     try:
-        ts=int(request.POST.get('ts', 0))
-        begin_ts=float(request.POST.get('begin', 0.0))
+        ts = int(request.POST.get('ts', 0))
+        begin_ts = float(request.POST.get('begin', 0.0))
     except ValueError:
         ts = 0
         begin_ts = 0.0
@@ -89,7 +89,14 @@ def write(request):
     src = request.POST.get('user')
     displays = USER_TO_NAMES.get(src, {}).get('displays', [])
 
-    if not src or not ts or not begin_ts or len(numbers) != len(displays):
+    logging.warning(src)
+    logging.warning(ts)
+    logging.warning(begin_ts)
+    logging.warning(len(numbers))
+    logging.warning(len(displays))
+
+    if not src or not ts or not begin_ts \
+            or len(numbers) != len(displays):
         return HttpResponse(status=400, content='did not validate!\n')
 
     request_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
@@ -109,7 +116,8 @@ def write(request):
     old_numbers = list(old_num_batch.numbers.all()) if old_num_batch else []
     new_batch = None
     for num, _src in zip(numbers, displays):
-
+        if _src == "H 25":
+            num += 1000     # H25 hat ne angetapte 1 vorne dran
         old_num_obj = None
         if old_num_batch is not None:
             old_number_ = [i for i in old_numbers if i.src == _src]

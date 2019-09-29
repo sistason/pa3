@@ -1,154 +1,53 @@
 ---
-# Create web network, for better firewalling comfortability. Don't forget to actually configure your fw for this!
-- name: Create network
-  become: yes
-  docker_network:
-    name: pa3_net
-    driver: bridge
-    driver_options:
-      com.docker.network.bridge.name: pa3-docker-br
-    ipam_options:
-      subnet: '{{ subnet }}.0/28'
-
-# Copy src
-- name: create pa3 directory
-  file: 
-    path: "{{ build_directory }}" 
-    state: "directory"
-
-- name: Copy frontent to the host
-  synchronize:
-    src: files/pa3_frontend
-    dest: "{{ build_directory }}"
-    rsync_opts:
-      - "--exclude=apache2-site.conf.j2"
-
-- name: Template the cron-script
-  template:
-    src: files/update_webserver.sh.j2
-    dest: "{{ build_directory }}/update_webserver.sh"
-  when: use_gitlab
-
-- name: setup the cron-script in cron
-  cron:
-    name: "update_recognition"
-    minute: "0"
-    hour: "*"
-    job: "{{ build_directory }}/update_webserver.sh"
-  when: use_gitlab
-
-- name: Copy apache2-config with server_url
-  template:
-    src: files/pa3_frontend/apache2-site.conf.j2
-    dest: "{{ build_directory }}/pa3_frontend/apache2-site.conf"
-
-- name: Copy mysql to the host
-  synchronize:
-    src: files/pa3_mysql
-    dest: "{{ build_directory }}/"
-
-- name: Copy proxy to the host
-  synchronize:
-    src: files/pa3_proxy
-    dest: "{{ build_directory }}/"
-    rsync_opts:
-      - "--exclude=proxy.conf.j2"
-
-- name: Copy nginx-proxy-config with server_url
-  template:
-    src: files/pa3_proxy/proxy.conf.j2
-    dest: "{{ build_directory }}/pa3_proxy/proxy.conf"
-
 # --- Set secrets ---
 - set_fact:
-    secret_data_mysql_root_password: "{{ lookup('file', 'secrets/mysql_root_password') }}"
+    secret_data_mysql_password: "{{ lookup('file', 'secrets/mysql_password') }}"
     secret_data_django_secret_key: "{{ lookup('file', 'secrets/django_secret_key') }}"
     secret_data_recognizer_auth: "{{ lookup('file', 'secrets/recognizer_auth') }}"
 
-# Build containers
-# Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
-- name: Copy .dockerignore
-  synchronize:
-    src: files/.dockerignore
-    dest: "{{ build_directory }}/"
-
-- name: Build frontend
-  command: "docker build -t pa3_frontend:latest
-    -f {{ build_directory }}/pa3_frontend/Dockerfile_frontend
-    --build-arg SECRET_RECOGNIZER_AUTH=\"{{ secret_data_recognizer_auth }}\"
-    --build-arg SECRET_MYSQL_ROOT_PASSWORD=\"{{ secret_data_mysql_root_password }}\"
-    --build-arg SECRET_DJANGO_KEY=\"{{ secret_data_django_secret_key }}\"
-    {{ build_directory }}"
-
-- name: Build proxy
-  command: "docker build -t pa3_proxy:latest
-    -f {{ build_directory }}/pa3_proxy/Dockerfile_proxy
-    {{ build_directory }}"
-
-- name: Build mysql
-  command: "docker build -t pa3_mysql:latest
-    -f {{ build_directory }}/pa3_mysql/Dockerfile_mysql
-    --build-arg SECRET_MYSQL_ROOT_PASSWORD=\"{{ secret_data_mysql_root_password }}\"
-    {{ build_directory }}"
-
-# Start web containers
-- name: Make sure that the database-volume directory exists
-  file: 
-    path: "{{ build_directory }}/pa3_mysql_data"
-    state: "directory"
-
-- name: Start mysql container
-  become: yes
-  docker_container:
-    name: pa3_mysql
-    hostname: pa3_mysql
-    image: pa3_mysql
-    state: started
-    networks:
-      - name: "pa3_net"
-        ipv4_address: "{{ subnet }}.3"
-    volumes:
-      - "{{ build_directory }}/pa3_mysql_data:/var/lib/mysql:rw"
-  register: mysql_container
-
-- name: Wait for the mysql-container to be up and to have build the database
-  wait_for:
-    timeout: 15
-  when: mysql_container.changed
-
-- name: Make sure the certificates-directory exists
+- name: create pa3 directory
   file:
-    path: "{{ build_directory }}/letsencrypt_data"
+    path: "{{ build_directory }}"
     state: "directory"
 
-- name: Start letsencrypt proxy container
-  become: yes
-  docker_container:
-    name: pa3_proxy
-    image: pa3_proxy
-    command: "{{ server_url }}"
-    networks:
-      - name: "pa3_net"
-        ipv4_address: "{{ subnet }}.2"
-    volumes:
-      - "{{ build_directory }}/letsencrypt_data:/etc/letsencrypt:rw"
+- name: sync source
+  synchronize:
+    src: files/pa3_frontend/pa3_django
+    dest: "{{ build_directory }}"
 
-- name: Wait for the certificate build by the proxy
-  become: yes
-  wait_for:
-    path: "{{ build_directory}}/letsencrypt_data/archive/{{ server_url }}"
-    timeout: 60
+- name: Copy files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ build_directory }}"
+  with_items:
+    - files/pa3_frontend/crontab
+    - files/pa3_frontend/Dockerfile
+    - files/pa3_frontend/entrypoint.sh
+    - files/pa3_frontend/requirements.txt
 
-- name: Start frontend container
-  become: yes
-  docker_container:
-    name: pa3_frontend
-    hostname: pa3_frontend
-    image: pa3_frontend
-    state: started
-    networks:
-      - name: "pa3_net"
-        ipv4_address: "{{ subnet }}.4"
-    volume_driver: bind
-    volumes:
-      - "{{ build_directory }}/letsencrypt_data/archive:/etc/apache2/ssl:rw"
+- name: Template files
+  template:
+    src: files/pa3_frontend/docker-compose.yml.j2
+    dest: "{{ build_directory }}/docker-compose.yml"
+
+- name: ensure .dockerignore
+  copy:
+    content: "^pa3_mysql/\n"
+    dest: "{{ build_directory }}/.dockerignore"
+
+- name: Make sure that the database-volume directory exists
+  file:
+    path: "{{ build_directory }}/mysql_data"
+    state: "directory"
+
+- name: ensure docker network
+  docker_network:
+    name: webproxy
+
+- name: Start Services
+  docker_service:
+    project_src: "{{ build_directory }}"
+    project_name: pa3
+    state: present
+    restarted: yes
+    build: yes

@@ -1,73 +1,26 @@
 ---
 - name: create build-directory
   file:
-    path: "{{ build_directory }}/"
+    path: "{{ build_directory }}/build"
     state: "directory"
-
-- name: Copy git-deploy-key
-  synchronize:
-    src: secrets/gitlab_deploy_key
-    dest: "{{ build_directory }}/"
-  when: use_gitlab
-
-- name: Check if the recognizer is already deployed
-  stat:
-    path: "{{ build_directory }}/pa3"
-  register: p
-
-- name: Initially, just clone the repo
-  git:
-    repo: ssh://git@gitlab.tu-berlin.de/freitagsrunde/pa3
-    dest: "{{ build_directory }}/pa3/"
-    key_file: "{{ build_directory }}/gitlab_deploy_key"
-    accept_hostkey: yes
-  when: use_gitlab and p.stat.isdir is not defined or not p.stat.isdir
 
 - name: Copy pa3_recognizer src to the host
   synchronize:
-    src: files/pa3_recognizer
-    dest: "{{ build_directory }}"
-    rsync_opts:
-      - "--exclude=tests/"
-  when: not use_gitlab or p.stat.isdir is defined and p.stat.isdir
+    src: "{{ item }}"
+    dest: "{{ build_directory }}/build/"
+  with_items:
+    - files/pa3_recognizer/requirements.txt
+    - files/pa3_recognizer/recognition
+    - files/pa3_recognizer/Dockerfile
+    - secrets/recognizer_auth
 
-- name: Copy necessary secrets
-  synchronize:
-    src: secrets/recognizer_auth
-    dest: "{{ build_directory }}/pa3/src/pa3_recognizer/recognizer_auth"
-
-- name: Template the cron-script
+- name: Template docker-compose
   template:
-    src: files/update_recognizer.sh.j2
-    dest: "{{ build_directory }}/update_recognizer.sh"
-  when: use_gitlab
+    src: files/pa3_recognizer/docker-compose.yml.j2
+    dest: "{{ build_directory }}/docker-compose.yml"
 
-- name: setup the cron-script in cron
-  cron:
-    name: "update_recognition"
-    minute: "0"
-    hour: "*"
-    job: "{{ build_directory }}/update_recognizer.sh"
-  when: use_gitlab
-
-# Ansible-docker_build has poor performance and docker build already has the idempotence, so use the command-module here
-- name: Build recognizer
-  become: yes
-  command: docker build -t pa3_recognizer:latest -f "{{ build_directory }}/pa3/src/pa3_recognizer/Dockerfile_recognizer" "{{ build_directory }}/pa3/src"
-
-
-- name: Start the recognizer container on the host
-  become: yes
-  docker_container:
-    name: pa3_recognizer
-    hostname: "pa3_recognizer_{{ inventory_hostname }}"
-    image: pa3_recognizer
-    state: started
-    devices:
-      - "/dev/video0:/dev/video0:rwm"
-    env:
-      SERVER_URL: "{{ server_url }}"
-      CAMERA: 0
-      PYTHONPATH: "/srv/pa3/recognition"
-      USER: "{{ inventory_hostname }}"
-
+- docker_service:
+    project_src: "{{ build_directory }}"
+    state: present
+    restarted: yes
+    build: yes

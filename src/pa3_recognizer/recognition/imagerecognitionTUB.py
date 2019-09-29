@@ -58,7 +58,7 @@ class ImageRecognitor(AbstractImageRecognitor):
             6. Combine digits and validate the resulting number"""
 
     template = None                         # Keep a copy of the template to modify for this algorithm
-    iteration = 0                           # For state/logging purposes
+    iteration = 0                           # For state/logging purposescd
     position_of_number_table_in_image = []  # Optimization for not always recomputing the position of the number table
 
     def __init__(self, config):

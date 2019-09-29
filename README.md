@@ -5,11 +5,9 @@ This project was started to digitze the numbers in front of the exam office of t
 It was expanded and is now able to collect OCR-input from multiple recognizers into a database for display.
 
 ## Operation
-The project is distributed via Ansible as 4 Docker-containers:
-- Recognizer
-- Frontend
-  - frontend_mysql
-  - frontend_proxy
+The project is distributed via Ansible as 3+n Docker-containers:
+- 1-n * Recognizer
+- Frontend + mysql
 
 ### Recognizer
 The recognizer is located on a device with a camera or with access to the images it needs to run OCR on.
@@ -27,43 +25,34 @@ The software consists of a python-django framework, which:
 - provides an API
 - Optional: Interfaces services of notifications for the users
 
-Additionally, there is a mysql container for the database of django and a proxy container
-for redirecting to https and handling the Let's Encrypt certificate verification process.
+Additionally, there is a mysql container for the database of django
+Reverseproxy is done separately, the frontend expects http on port 8003.
 
 ## Setup New
-You deploy the setup once with ansible using ssh-key/password on your local machine.
-Afterwards, 
-- a gitlab-ci.yml is available to build new webserver-images
-- web: a cron-script to get the images via the gitlab-repository
-- rec: a cron-scirpt to pull the repo and rebuild/rerun the recognizer-image.
+You deploy the setup with ansible using ssh-key/passwords
 
-### Initial Setup
 - setup secrets in the gitlab-ci variables and put them into ansible/secrets as:
   - SECRET_DJANGO_SECRET_KEY / django_secret_key
-  - SECRET_MYSQL_ROOT_PASSWORD / mysql_root_password
+  - SECRET_MYSQL_PASSWORD / mysql_password
   - SECRET_RECOGNIZER_AUTH / recognizer_auth
-  - Create deploy key and put into secrets/gitlab-deploy-key
+
+- there is a ansible/setup_pi.sh to burn an image to a SD-Card and enable ssh+keys 
 
 - with a ssh-key of the recognizers and the webserver(s), use the ansible-playbook site.yml 
-   with the hosts-inventory to deploy the entire thing initially/periodically OR
-- use the ansible-playbook recognizers.yml to deploy those and put the cron-update-script 
-   manually to the webserver_host, so it pulls everything via the gitlab-ci+repository
+   to deploy the entire thing initially/periodically OR
+- use the ansible-playbook recognizers.yml and webserver.yml to deploy those seperately
 
-- If the secrets change, you need to redeploy the recognizer-key manually, as the recognizers 
-   just pull the repo (gitlab-ci crosscompiling for arm? nah...). 
-   The webserver use gitlab-ci, which has the secrets available as variables and will update 
-   via the cron-update-script on a push.
-
+- If the secrets change, redeploy.
 
 ## Prerequisites
 - edit hosts to reflect your infrastructure. Apt is used here for package management, so consider using Debian hosts.
 - the ssh-key Ansible uses has to work on all hosts (root, for package-installation)
-- edit playbook.yml for `server_url` and `frontend_directry`.
-- Docker needs port 80 and 443 on the web-host. If the ports are used, consider ProxyPass/etc. with either reconfiguring the frontend-ports in src/pa3_frontend/playbook.yml or use a virtual machine for the frontend.
+- edit ansible variables for mainly `server_url`.
+- Setup a reverseproxy on the webserver to forward to 8003.
 - install Ansible
 
 ## Run
-Run `ansible-playbook -i hosts playbook.yml`
+Run `ansible-playbook playbooks/site.yml`
 
 Please note this project was neither started nor converted to be plug&play. 
 It needs to be adapted for your use case, so understanding the operation is necessary 

@@ -126,7 +126,7 @@ class ImageRecognitionUtilities:
             return bot, top, left, right
 
         height, width = image.shape
-        strip_size = int((width / 9) / digits)
+        strip_size = int((width / 25) / digits)
 
         conts_combined = self.get_set_pixels(image)
 

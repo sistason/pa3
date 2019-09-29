@@ -4,4 +4,5 @@ ipython
 requests
 bs4
 lxml
-mod_wsgi
+gunicorn
+whitenoise

@@ -1,0 +1,5 @@
+---
+- hosts: recognizers
+  roles:
+    - base_docker
+    - recognizer

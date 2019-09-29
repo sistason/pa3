@@ -2,9 +2,11 @@ from django.db import models
 from pa3.settings import USER_TO_NAMES
 import hashlib
 
+all_displays = []
+[all_displays.extend(i.get('displays', [])) for i in USER_TO_NAMES.values()]
 
 class News(models.Model):
-    choices_src=zip(('FR', 'PA'), ('FR','PA'))
+    choices_src = [('FR', 'FR'), ('PA','PA')]
     src = models.CharField(max_length=2, choices=choices_src)
 
     title = models.CharField(max_length=500)
@@ -17,9 +19,7 @@ class News(models.Model):
 
 
 class Subscriber(models.Model):
-    displays = [i.get('displays', []) for i in USER_TO_NAMES.values()]
-    choices_src = zip(displays, displays)
-    src = models.CharField(choices=choices_src, max_length=50)
+    src = models.CharField(choices=zip(all_displays, all_displays), max_length=50)
     protocol = models.CharField(max_length=50)
     identifier = models.CharField(max_length=200)
     number = models.SmallIntegerField()

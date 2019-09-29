@@ -6,12 +6,14 @@ from pa3.settings import USER_TO_NAMES
 from pa3_web.templatetags.pa3_timesinceseconds import timesincesecondsonly, timesinceseconds
 
 
+all_displays = []
+[all_displays.extend(i.get('displays', [])) for i in USER_TO_NAMES.values()]
+choices_displays = zip(all_displays, all_displays)
+
 class StatisticalData(models.Model):
     # Stores statistical information on the numbers, to minimize the
     # computation effort
-    displays = [i.get('displays', []) for i in USER_TO_NAMES.values()]
-    choices_src = zip(displays, displays)
-    src = models.CharField(max_length=50, choices=choices_src)
+    src = models.CharField(max_length=50, choices=choices_displays)
 
     date = models.DateTimeField(default=timezone.now)  # for sorting purposes
 
@@ -40,9 +42,7 @@ class StatisticalData(models.Model):
 
 
 class WaitingNumber(models.Model):
-    displays = [i.get('displays', []) for i in USER_TO_NAMES.values()]
-    choices_src = zip(displays, displays)
-    src = models.CharField(choices=choices_src, max_length=50)
+    src = models.CharField(choices=choices_displays, max_length=50)
     date = models.DateTimeField()
     date_delta = models.IntegerField(null=True)
     proc_delay = models.FloatField(null=True)
@@ -68,7 +68,7 @@ class WaitingNumber(models.Model):
 
 
 class WaitingNumberBatch(models.Model):
-    choices_src = zip(USER_TO_NAMES.keys(), [i.get('placement', '?') for i in USER_TO_NAMES.values()])
+    choices_src = list(zip(USER_TO_NAMES.keys(), [i.get('placement', '?') for i in USER_TO_NAMES.values()]))
     src = models.CharField(choices=choices_src, db_index=True, max_length=50)
     src_ip = models.GenericIPAddressField()
 
@@ -96,7 +96,7 @@ class WaitingNumberBatch(models.Model):
 class NewestNumberBatch(models.Model):
     # To minimze database queries, the newest Batch gets stored seperately and 
     # only contains the newest WaitingNumberBatch
-    choices_src = zip(USER_TO_NAMES.keys(), [i.get('placement', '?') for i in USER_TO_NAMES.values()])
+    choices_src = list(zip(USER_TO_NAMES.keys(), [i.get('placement', '?') for i in USER_TO_NAMES.values()]))
     src = models.CharField(choices=choices_src, max_length=50)
     date = models.DateTimeField()
     newest = models.ForeignKey(WaitingNumberBatch, on_delete=None)

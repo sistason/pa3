@@ -1,0 +1,15 @@
+
+version: "2.1"
+services:
+  recognizer:
+    image: pa3_recognizer:latest
+    build: build/
+    hostname: "pa3_recognizer_{{ inventory_hostname }}"
+    devices:
+      - "/dev/video{{ camera_id }}:/dev/video0:rwm"
+    environment:
+      - "TZ=Europe/Berlin"
+      - "PYTHONPATH=/srv/pa3/recognition"
+      - "USER={{ inventory_hostname }}"
+      - "SERVER_URL={{ server_url }}"
+      - "CAMERA=0"

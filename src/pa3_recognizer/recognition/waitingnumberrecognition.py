@@ -9,7 +9,6 @@ import cv2
 import re
 import base64
 import numpy as np
-import dns.resolver
 
 from imagecreation import ImageCreator
 from imagerecognitionTUB import ImageRecognitor
@@ -19,20 +18,23 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 
 class Configuration:
     def __init__(self, server_conf):
-        self.valid_ranges = server_conf.get('ranges', [])
-        # How many numbers are (vertically) on the table?
-        self.number_of_numbers = len(self.valid_ranges)
+        try:
+            self.valid_ranges = server_conf.get('ranges')
+            # How many numbers are (vertically) on the table?
+            self.number_of_numbers = len(self.valid_ranges)
 
-        self.previous_numbers = [number.get('number', -1)
-                                 for number in server_conf.get('current_numbers',
-                                                               [{'number': -1} for _ in range(self.number_of_numbers)])]
+            self.previous_numbers = [number.get('number', -1)
+                                     for number in server_conf.get('current_numbers',
+                                                                   [{'number': -1} for _ in range(self.number_of_numbers)])]
 
-        self.rotate = server_conf.get('rotate', 0)
-        # How many digits are in the table per number?
-        self.number_of_digits = server_conf.get('digits', 3)
+            self.rotate = server_conf.get('rotate', 0)
+            # How many digits are in the table per number?
+            self.number_of_digits = server_conf.get('digits', 3)
 
-        self.template = self.decode_template(server_conf.get('template'), gray=True)
-        self.digit_mask = self.decode_template(server_conf.get('digit_mask'))
+            self.template = self.decode_template(server_conf.get('template'), gray=True)
+            self.digit_mask = self.decode_template(server_conf.get('digit_mask'))
+        except (ValueError, IndexError):
+            raise ValueError
 
     @staticmethod
     def decode_template(template_encoded, gray=False):
@@ -53,41 +55,31 @@ class WaitingNumberRecognition:
         self.url = server_url
         self.user = user
         self.password = client_password
-        logging.basicConfig(format='%(levelname)s:%(funcName)s:%(message)s', level=logging.INFO)
+        logging.basicConfig(format='%(levelname)s:%(funcName)s:%(message)s', level=logging.DEBUG)
 
         self.image_creator = ImageCreator(user=user, filesystem_dir=image_directory, camera_id=camera)
 
-        config = self.get_config()
-        self.image_recognitor = ImageRecognitor(config)
-        self.cache_dns()
+        self.config = self.get_config()
+        self.image_recognitor = ImageRecognitor(self.config)
 
     def get_config(self):
-        config_url = 'https://{}/get_config'.format(self.url)
-                                                                                         # TODO: remove in production
-        ret = requests.post(config_url, data={'user': self.user, 'password': self.password}, verify=False)
-        try:
-            conf_json = ret.json()
-        except ValueError:
-            conf_json = {}
-        return Configuration(conf_json)
+        config = None
+        while config is None:
+            config_url = 'https://{}/get_config'.format(self.url)
+            try:
+                ret = requests.post(config_url, data={'user': self.user, 'password': self.password})
+                config = Configuration(ret.json())
+            except Exception as e:
+                logging.error('Could not get config ({}), retrying...'.format(e))
+                config = None
 
-    def cache_dns(self):
-        # Cache DNS by writing the self.url to /etc/hosts
-        try:
-            url_ip = dns.resolver.query(self.url, raise_on_no_answer=False).rrset.items[0].address
-        except (ValueError, AttributeError, IndexError):
-            return
+            time.sleep(5)
 
-        with open('/etc/hosts', 'r+') as f:
-            hosts = f.read()
-            if self.url in hosts:
-                if not re.search(r'^{}\s+{}'.format(url_ip, self.url), hosts):
-                    hosts = re.sub(r'(?m)^(\S+)\s{}$'.format(self.url), url_ip, hosts)
-                    f.write(hosts)
-            else:
-                f.write("{}\n{}    {}".format(hosts, url_ip, self.url))
+        return config
 
     def spin(self, idle_time=0):
+        if not self.config:
+            return
         while True:
             begin = time.time()
             image = self.image_creator.get_image()
@@ -118,7 +110,8 @@ class WaitingNumberRecognition:
                                                    'image/jpeg',
                                                    {'Expires': '0'})
             try:
-                requests.post("https://{}/write".format(self.url), data=data, files=files, verify=False)
+                ret = requests.post("https://{}/write".format(self.url), data=data, files=files)
+                logging.debug('Submitted numbers, returncode {}'.format(ret.status_code))
             except Exception as e:
                 logging.exception("Failed to submit request: {0}".format(e))
 
@@ -141,7 +134,7 @@ if __name__ == '__main__':
 
     argparser.add_argument('--device', '-d', default=-1, type=int,
                            help='Set the device number (/dev/videoX). Default is -1 (first it can find)')
-    argparser.add_argument('--wait', '-w', default=0, type=int,
+    argparser.add_argument('--wait', '-w', default=1, type=int,
                            help='Set the time to sleep between captures')
     argparser.add_argument('--image_directory', '-i', type=str,
                            help='Set if there is a directory to get the images from')
@@ -168,7 +161,7 @@ if __name__ == '__main__':
 
     camera_ = pd['device']
     if camera_ < 0:
-        camera_ = environ.get('CAMERA', -1)
+        camera_ = int(environ.get('CAMERA', -1))
 
     user_ = pd['user']
     if not user_:

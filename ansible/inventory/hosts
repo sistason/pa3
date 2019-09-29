@@ -1,0 +1,13 @@
+# User on the machine deployed to should be able to:
+#- sudo without password,
+#- route the 80/443 traffic to the containers / forward docker0
+#- have docker not use iptables / all the subnet for docker0
+
+[webservers]
+web             ansible_host=130.149.85.166 ansible_port=23 ansible_user=root
+
+[recognizers]
+pa_10    ansible_host=130.149.233.82 ansible_user=root
+pa_02    ansible_host=130.149.233.85 ansible_user=root
+pa_23    ansible_host=130.149.233.84 ansible_user=root
+pa_13    ansible_host=130.149.233.83 ansible_user=root

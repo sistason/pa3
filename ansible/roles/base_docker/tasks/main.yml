@@ -1,0 +1,86 @@
+---
+- name: Check if docker is already there
+  command: docker info
+  register: p
+  ignore_errors: yes
+
+- block:
+  # Adapted from nickjj/ansible-docker
+  - name: Install Docker and role dependencies
+    become: yes
+    apt:
+      #                                                                                                          docker login without keyring
+      name: ["apt-transport-https", "ca-certificates", "software-properties-common", "python-docker", "rsync", "gnupg2", "pass"]
+      state: "present"
+      install_recommends: False
+      update_cache: True
+
+  - name: Get upstream APT GPG key
+    become: yes
+    apt_key:
+      id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
+      keyserver: "{{ ansible_local.core.keyserver
+                     if (ansible_local|d() and ansible_local.core|d() and
+                         ansible_local.core.keyserver)
+                     else 'hkp://pool.sks-keyservers.net' }}"
+      state: "present"
+
+  - name: get packet_architecture
+    set_fact:
+      architecture: "{{ 'armhf' if ansible_machine.startswith('arm') else 'amd64' }}"
+
+  - name: get distribution
+    shell: ". /etc/os-release; echo $ID"
+    register: distri
+
+  - name: Configure upstream APT repository
+    become: yes
+    apt_repository:
+      repo: "deb [arch={{ architecture }}] https://download.docker.com/linux/{{ distri.stdout }} {{ ansible_distribution_release }} stable"
+      state: "present"
+      update_cache: True
+
+  - name: Install Docker
+    become: yes
+    apt:
+      name: "docker-ce"
+      state: "present"
+      install_recommends: False
+      cache_valid_time: "86400"
+
+  when: p.rc != 0
+
+
+- name: Check for docker-compose
+  command: docker-compose -v
+  register: d
+  ignore_errors: yes
+
+- name: Install Docker Compose
+  become: yes
+  apt:
+    name: "docker-compose"
+    state: "present"
+  when: d.rc != 0
+
+- name: Check for docker-compose version
+  command: docker-compose -v
+  register: d
+  ignore_errors: yes
+
+- name: Upgrade Docker Compose if too old
+  block:
+    - name: Remove apts docker-compose
+      apt:
+        name: "docker-compose"
+        state: "absent"
+
+    - name: Install Pip
+      apt:
+        name: ["python-pip", "python-setuptools"]
+        state: "present"
+
+    - name: Install docker-compose via pip
+      command: pip install docker-compose
+
+  when: d.rc != 0 or d.stdout|regex_search('([0-9]\.[0-9]+)')|regex_search('([0-9]+$)')|float < 20

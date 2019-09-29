@@ -1,0 +1,7 @@
+---
+# file: group_vars/all-vars.yml
+build_directory: "/srv/pa3"
+server_url: "pa3.freitagsrunde.org"
+camera_id: 0
+ansible_user: root
+ansible_connection: ssh

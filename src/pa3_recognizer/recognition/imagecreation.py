@@ -14,14 +14,15 @@ class ImageCreator():
     def __init__(self, user='', filesystem_dir='', camera_id=-1):
         self.USER = user
 
-        self.cam = self._init_cam(camera_id) if camera_id != -1 else None
+        self.camera_id = camera_id
+        self.cam = self._init_cam() if camera_id != -1 else None
         self.filesystem_dir = filesystem_dir
 
     def get_image(self):
-        if self.cam is not None:
-            return self.get_image_webcam()
         if self.filesystem_dir:
             return self.get_image_filesystem()
+        if self.cam is not None:
+            return self.get_image_webcam()
 
     def get_image_filesystem(self):
         try:
@@ -38,14 +39,16 @@ class ImageCreator():
 
     def get_image_webcam(self):
         try:
-            return self.cam.read()[1]
+            cam_result = self.cam.read()
+            if cam_result[0]:
+                return cam_result[1]
+            self.cam = self._init_cam()
         except Exception as e:
             logging.exception('Error while getting image, was: {0}'.format(e))
 
-    @staticmethod
-    def _init_cam(camera_id):
+    def _init_cam(self):
         try:
-            cam_ = cv2.VideoCapture(camera_id)
+            cam_ = cv2.VideoCapture(self.camera_id)
             cam_.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             cam_.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
             return cam_

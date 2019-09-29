@@ -1,4 +1,0 @@
----
-
-- import_playbook: webservers.yml
-- import_playbook: recognizers.yml
